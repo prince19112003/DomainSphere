@@ -8,85 +8,246 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;900&family=JetBrains+Mono:wght@300;400;600&display=swap" rel="stylesheet" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            cyberBlue: '#ff1744', /* Cursed Crimson */
+            cyberBlueDim: 'rgba(255, 23, 68, 0.12)',
+            cyberBlueGlow: 'rgba(255, 23, 68, 0.35)',
+            cyberBlueActive: 'rgba(255, 23, 68, 0.18)',
+            ancientGold: '#ffd700',
+            deepBlack: '#020204',
+            panelDark: 'rgba(3, 3, 5, 0.85)',
+            textMuted: '#888894',
+          },
+          fontFamily: {
+            sans: ['Outfit', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace'],
+          }
+        }
+      }
+    }
+  </script>
   <link rel="stylesheet" href="style.css" />
 </head>
-<body>
+<body class="bg-deepBlack text-gray-200 overflow-hidden font-sans select-none">
 
   <!-- ═══════════════════════════════════════════════════════════
        LANDING SCREEN (Shown before camera is active)
   ═══════════════════════════════════════════════════════════ -->
-  <div id="landing-screen">
+  <div id="landing-screen" class="fixed inset-0 z-[100] flex items-center justify-center bg-[#020204] overflow-hidden">
     <!-- Moving Nebulae & 3D scrolling ground -->
     <div class="nebula-1"></div>
     <div class="nebula-2"></div>
     <div class="landing-grid-3d"></div>
     <div class="landing-particles" id="landing-particles"></div>
 
-    <div class="lobby-container">
+    <div class="lobby-container relative z-[4] flex gap-6 max-w-[1200px] w-[95vw] h-[82vh] max-h-[700px] justify-between items-stretch transition-all">
+      <!-- Mobile Tabs selector -->
+      <div class="flex md:hidden justify-around w-full border-b border-[#ff1744]/15 bg-deepBlack/80 relative z-20 shrink-0">
+        <button onclick="switchLobbyTab('left')" class="lobby-tab-btn flex-1 py-3 text-center text-[10px] font-mono border-b-2 border-transparent text-gray-500 tracking-wider">DIAGNOSTICS</button>
+        <button onclick="switchLobbyTab('center')" class="lobby-tab-btn flex-1 py-3 text-center text-[10px] font-mono border-b-2 border-[#ff1744] text-white tracking-wider">ACTIVATOR</button>
+        <button onclick="switchLobbyTab('right')" class="lobby-tab-btn flex-1 py-3 text-center text-[10px] font-mono border-b-2 border-transparent text-gray-500 tracking-wider">JUTSU</button>
+      </div>
+
       <!-- LEFT PANEL: SYSTEM DIAGNOSTICS -->
-      <div class="lobby-panel lobby-panel--left">
-        <div class="panel-tag">&gt;_ CORE_DIAGNOSTICS</div>
-        <div class="diag-group">
+      <div class="lobby-panel lobby-panel--left w-[260px] flex-shrink-0 flex flex-col p-6 overflow-hidden" id="lobby-panel-left">
+        <!-- Ancient cracked seal overlay -->
+        <svg class="absolute inset-0 w-full h-full pointer-events-none opacity-[0.22] select-none z-[1]" viewBox="0 0 100 100" preserveAspectRatio="none">
+          <path d="M 0 0 L 15 25 L 8 40 L 22 55 L 12 70 L 28 85 L 18 100" stroke="#ff1744" stroke-width="0.35" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+          <path d="M 100 0 L 85 20 L 92 38 L 78 52 L 88 72 L 75 88 L 82 100" stroke="#ff1744" stroke-width="0.35" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+          <path d="M 15 25 L 30 20 L 45 28 L 55 22" stroke="#ff1744" stroke-width="0.25" fill="none" opacity="0.6" stroke-linecap="round" stroke-linejoin="round" />
+          <path d="M 85 72 L 70 78 L 60 72 M 75 52 L 62 48" stroke="#ff1744" stroke-width="0.25" fill="none" opacity="0.6" stroke-linecap="round" stroke-linejoin="round" />
+          <path d="M 0 55 L 10 50 L 5 62 L 18 68" stroke="#ff1744" stroke-width="0.25" fill="none" opacity="0.5" stroke-linecap="round" stroke-linejoin="round" />
+          <path d="M 100 45 L 90 42 L 95 55 L 82 60" stroke="#ff1744" stroke-width="0.25" fill="none" opacity="0.5" stroke-linecap="round" stroke-linejoin="round" />
+        </svg>
+
+        <button id="left-toggle-btn" class="panel-toggle-handle" onclick="toggleLeftPanel()" aria-label="Toggle diagnostics">◂</button>
+        <div class="panel-tag relative z-10">&gt;_ CORE_DIAGNOSTICS</div>
+        <div class="diag-group flex flex-col gap-3 mb-5 relative z-10">
           <div class="diag-line"><span>CAMERA STATUS:</span> <span class="text-glow">READY</span></div>
           <div class="diag-line"><span>ACCELERATOR:</span> <span class="text-glow">WebGL 2.0</span></div>
           <div class="diag-line"><span>TRACKING ENG:</span> <span>MediaPipe WASM</span></div>
           <div class="diag-line"><span>LATENCY POOL:</span> <span>OPTIMIZED</span></div>
           <div class="diag-line"><span>FPS ENFORCED:</span> <span>60 FPS</span></div>
         </div>
-        <div class="matrix-readout">
+        <div class="matrix-readout relative z-10">
           <div class="matrix-bar"><div class="matrix-bar-fill fill-90"></div></div>
           <div class="matrix-bar"><div class="matrix-bar-fill fill-75"></div></div>
           <div class="matrix-bar"><div class="matrix-bar-fill fill-60"></div></div>
         </div>
         <!-- High-tech radar simulation -->
-        <div class="radar-scan">
+        <div class="radar-scan relative z-10">
           <div class="radar-circle"></div>
           <div class="radar-line"></div>
         </div>
       </div>
 
       <!-- CENTER PANEL: CHAKRA ACTIVATOR LOBBY -->
-      <div class="lobby-panel lobby-panel--center">
-        <div class="brand-header">
+      <div class="lobby-panel lobby-panel--center active-tab flex-1 flex flex-col items-center justify-between p-8 md:p-6 overflow-hidden">
+        <!-- Ancient cracked seal overlay -->
+        <svg class="absolute inset-0 w-full h-full pointer-events-none opacity-[0.22] select-none z-[1]" viewBox="0 0 100 100" preserveAspectRatio="none">
+          <path d="M 0 0 L 15 25 L 8 40 L 22 55 L 12 70 L 28 85 L 18 100" stroke="#ff1744" stroke-width="0.35" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+          <path d="M 100 0 L 85 20 L 92 38 L 78 52 L 88 72 L 75 88 L 82 100" stroke="#ff1744" stroke-width="0.35" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+          <path d="M 15 25 L 30 20 L 45 28 L 55 22" stroke="#ff1744" stroke-width="0.25" fill="none" opacity="0.6" stroke-linecap="round" stroke-linejoin="round" />
+          <path d="M 85 72 L 70 78 L 60 72 M 75 52 L 62 48" stroke="#ff1744" stroke-width="0.25" fill="none" opacity="0.6" stroke-linecap="round" stroke-linejoin="round" />
+          <path d="M 0 55 L 10 50 L 5 62 L 18 68" stroke="#ff1744" stroke-width="0.25" fill="none" opacity="0.5" stroke-linecap="round" stroke-linejoin="round" />
+          <path d="M 100 45 L 90 42 L 95 55 L 82 60" stroke="#ff1744" stroke-width="0.25" fill="none" opacity="0.5" stroke-linecap="round" stroke-linejoin="round" />
+        </svg>
+
+        <div class="brand-header text-center mb-4 flex flex-col items-center relative z-10">
           <div class="brand-kana">ドメインスフィア</div>
-          <h1 class="brand-title">DOMAINSPHERE</h1>
-          <p class="brand-sub">Anime Hand Gesture Power System <span class="version-badge">v1.0</span></p>
+          <h1 class="brand-title">DOMAIN SPHERE</h1>
+          <!-- <p class="brand-sub">Anime Hand Gesture Power System <span class="version-badge">v1.0</span></p>
+          <div class="flex items-center gap-4 text-[9px] font-mono text-cyberBlue/40 mt-2 select-none">
+            <span>SYS_LOCK: SECURE</span>
+            <span>//</span>
+            <span>NODE: 0x7E3</span>
+            <span>//</span>
+            <span>FREQ: 60HZ</span>
+          </div> -->
         </div>
 
-        <!-- Rotating wireframe hand preview -->
-        <div class="hand-preview-wrap">
-          <canvas id="preview-canvas" width="340" height="340"></canvas>
-          <div class="preview-ring ring-1"></div>
-          <div class="preview-ring ring-2"></div>
-          <div class="preview-ring ring-3"></div>
-          <div class="preview-scan-line"></div>
+        <!-- Holographic Core Visualizer with electric sparks -->
+        <div class="relative w-40 h-40 flex items-center justify-center my-4 overflow-hidden pointer-events-none relative z-10">
+          <div class="core-scanline"></div>
+          
+          <!-- Electric current rings -->
+          <div class="absolute inset-0 border border-dashed border-[#ff1744]/20 rounded-full animate-[spin_12s_linear_infinite]"></div>
+          <div class="absolute inset-2 border border-dotted border-[#ff1744]/35 rounded-full animate-[spin_7s_linear_infinite_reverse]"></div>
+          <div class="absolute inset-5 border border-dashed border-[#ff1744]/30 rounded-full animate-[pulse_1.5s_ease-in-out_infinite]"></div>
+          
+          <!-- Jagged Lightning Sparks (NEW EFFECT) -->
+          <svg class="absolute inset-0 w-full h-full stroke-[#ff1744] fill-none stroke-[1.5] opacity-80 z-20 animate-[electricFlicker_0.15s_infinite]" viewBox="0 0 100 100">
+            <!-- Spark 1 (Top Left) -->
+            <path d="M 50 50 L 45 42 L 53 38 L 48 26 L 55 18" stroke-linecap="round" stroke-linejoin="round" />
+            <!-- Spark 2 (Bottom Right) -->
+            <path d="M 50 50 L 55 58 L 47 62 L 52 74 L 45 82" stroke-linecap="round" stroke-linejoin="round" />
+            <!-- Spark 3 (Top Right) -->
+            <path d="M 50 50 L 58 46 L 62 52 L 74 47 L 82 54" stroke-linecap="round" stroke-linejoin="round" />
+            <!-- Spark 4 (Bottom Left) -->
+            <path d="M 50 50 L 42 54 L 38 48 L 26 53 L 18 45" stroke-linecap="round" stroke-linejoin="round" />
+          </svg>
+
+          <!-- Core Orb -->
+          <div class="absolute w-16 h-16 bg-cyberBlueDim/30 rounded-full flex flex-col items-center justify-center shadow-[0_0_30px_rgba(255,23,68,0.45)] border border-[#ff1744]/60 z-30">
+            <span class="text-[8px] font-mono tracking-widest text-white opacity-85 uppercase">SEAL</span>
+            <span class="text-[9px] font-mono font-bold tracking-wider text-white animate-pulse">DORMANT</span>
+          </div>
         </div>
 
-        <button id="init-btn" class="init-button" aria-label="Initialize Chakra Sync">
+        <button id="init-btn" class="init-button py-6 px-12 border border-cyberBlue/25 bg-deepBlack/80 shadow-2xl relative w-full max-w-[420px] transition-all hover:border-cyberBlue/50 hover:shadow-cyan-900/10 relative z-10" aria-label="Initialize Chakra Sync">
           <span class="btn-glow"></span>
-          <span class="btn-label">[ INITIALIZE CHAKRA SYNC ]</span>
-          <span class="btn-sub">Grant camera access to begin</span>
+          <!-- Cyber side brackets -->
+          <span class="absolute left-3 top-1/2 -translate-y-1/2 font-mono text-[9px] text-cyberBlue/50 select-none animate-pulse">&gt;&gt;</span>
+          <span class="absolute right-3 top-1/2 -translate-y-1/2 font-mono text-[9px] text-cyberBlue/50 select-none animate-pulse">&lt;&lt;</span>
+          <span class="btn-label text-sm font-bold tracking-[4px] text-white">INITIALIZE SYNAPSE</span>
+          <span class="text-[9px] font-mono text-cyberBlue/60 mt-1 uppercase tracking-widest">[ READY FOR INPUT ]</span>
         </button>
 
-        <p class="privacy-note">🔒 100% Local — No data leaves your device</p>
+        <p class="privacy-note relative z-10">🔒 100% Local — No data leaves your device</p>
       </div>
 
       <!-- RIGHT PANEL: JUTSU SELECTION DATABASE -->
-      <div class="lobby-panel lobby-panel--right">
-        <div class="panel-tag">&gt;_ JUTSU_REGISTRY</div>
-        <div class="landing-power-list">
-          <div class="lpl-item" data-jutsu="heart"><span>💖 Heart Sanctuary</span></div>
-          <div class="lpl-item" data-jutsu="teleport"><span>💨 Body Flicker</span></div>
-          <div class="lpl-item" data-jutsu="rasengan"><span>🌀 Rasengan</span></div>
-          <div class="lpl-item" data-jutsu="chidori"><span>⚡ Chidori</span></div>
-          <div class="lpl-item" data-jutsu="katon"><span>🔥 Katon</span></div>
-          <div class="lpl-item" data-jutsu="gojo"><span>🔮 Gojo Domain</span></div>
-          <div class="lpl-item" data-jutsu="sukuna"><span>💀 Sukuna Domain</span></div>
-          <div class="lpl-item" data-jutsu="hollow"><span>🟣 Hollow Purple</span></div>
-          <div class="lpl-item" data-jutsu="wolverine"><span>🐺 Wolverine Claws</span></div>
+      <div class="lobby-panel lobby-panel--right w-[290px] flex-shrink-0 flex flex-col p-6 overflow-hidden" id="lobby-panel-right">
+        <!-- Ancient cracked seal overlay -->
+        <svg class="absolute inset-0 w-full h-full pointer-events-none opacity-[0.22] select-none z-[1]" viewBox="0 0 100 100" preserveAspectRatio="none">
+          <path d="M 0 0 L 15 25 L 8 40 L 22 55 L 12 70 L 28 85 L 18 100" stroke="#ff1744" stroke-width="0.35" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+          <path d="M 100 0 L 85 20 L 92 38 L 78 52 L 88 72 L 75 88 L 82 100" stroke="#ff1744" stroke-width="0.35" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+          <path d="M 15 25 L 30 20 L 45 28 L 55 22" stroke="#ff1744" stroke-width="0.25" fill="none" opacity="0.6" stroke-linecap="round" stroke-linejoin="round" />
+          <path d="M 85 72 L 70 78 L 60 72 M 75 52 L 62 48" stroke="#ff1744" stroke-width="0.25" fill="none" opacity="0.6" stroke-linecap="round" stroke-linejoin="round" />
+          <path d="M 0 55 L 10 50 L 5 62 L 18 68" stroke="#ff1744" stroke-width="0.25" fill="none" opacity="0.5" stroke-linecap="round" stroke-linejoin="round" />
+          <path d="M 100 45 L 90 42 L 95 55 L 82 60" stroke="#ff1744" stroke-width="0.25" fill="none" opacity="0.5" stroke-linecap="round" stroke-linejoin="round" />
+        </svg>
+
+        <button id="right-toggle-btn" class="panel-toggle-handle" onclick="toggleRightPanel()" aria-label="Toggle jutsu registry">▸</button>
+        <div class="panel-tag relative z-10">&gt;_ JUTSU_REGISTRY</div>
+        <div class="landing-power-list relative z-10">
+          <div class="lpl-item flex items-center justify-between" data-jutsu="heart">
+            <span>💖 Heart Sanctuary</span>
+            <span class="px-1.5 py-0.5 text-[8px] font-mono border border-cyberBlue/30 bg-cyberBlueDim/15 text-cyberBlue uppercase tracking-wider">A-Class</span>
+          </div>
+          <div class="lpl-item flex items-center justify-between" data-jutsu="teleport">
+            <span>💨 Body Flicker</span>
+            <span class="px-1.5 py-0.5 text-[8px] font-mono border border-cyan-500/30 bg-cyan-500/10 text-cyan-400 uppercase tracking-wider">B-Class</span>
+          </div>
+          <div class="lpl-item flex items-center justify-between" data-jutsu="rasengan">
+            <span>🌀 Rasengan</span>
+            <span class="px-1.5 py-0.5 text-[8px] font-mono border border-blue-500/30 bg-blue-500/10 text-blue-400 uppercase tracking-wider">A-Class</span>
+          </div>
+          <div class="lpl-item flex items-center justify-between" data-jutsu="chidori">
+            <span>⚡ Chidori</span>
+            <span class="px-1.5 py-0.5 text-[8px] font-mono border border-yellow-600/35 bg-yellow-600/10 text-yellow-500 uppercase tracking-wider">A-Class</span>
+          </div>
+          <div class="lpl-item flex items-center justify-between" data-jutsu="katon">
+            <span>🔥 Katon</span>
+            <span class="px-1.5 py-0.5 text-[8px] font-mono border border-orange-500/30 bg-orange-500/10 text-orange-400 uppercase tracking-wider">B-Class</span>
+          </div>
+          <div class="lpl-item flex items-center justify-between" data-jutsu="gojo">
+            <span>🔮 Gojo Domain</span>
+            <span class="px-1.5 py-0.5 text-[8px] font-mono border border-purple-500/35 bg-purple-500/10 text-purple-400 uppercase tracking-wider">S-Class</span>
+          </div>
+          <div class="lpl-item flex items-center justify-between" data-jutsu="sukuna">
+            <span>💀 Sukuna Domain</span>
+            <span class="px-1.5 py-0.5 text-[8px] font-mono border border-red-600/40 bg-red-600/10 text-red-500 uppercase tracking-wider">Forbidden</span>
+          </div>
+          <div class="lpl-item flex items-center justify-between" data-jutsu="hollow">
+            <span>🟣 Hollow Purple</span>
+            <span class="px-1.5 py-0.5 text-[8px] font-mono border border-fuchsia-500/35 bg-fuchsia-500/10 text-fuchsia-400 uppercase tracking-wider">S-Class</span>
+          </div>
+          <div class="lpl-item flex items-center justify-between" data-jutsu="wolverine">
+            <span>🐺 Wolverine Claws</span>
+            <span class="px-1.5 py-0.5 text-[8px] font-mono border border-gray-500/30 bg-gray-500/10 text-gray-400 uppercase tracking-wider">X-Gene</span>
+          </div>
         </div>
       </div>
     </div>
+
+    <script>
+      function toggleLeftPanel() {
+        const p = document.getElementById('lobby-panel-left');
+        p.classList.toggle('collapsed');
+        const btn = document.getElementById('left-toggle-btn');
+        btn.innerText = p.classList.contains('collapsed') ? '▸' : '◂';
+      }
+      function toggleRightPanel() {
+        const p = document.getElementById('lobby-panel-right');
+        p.classList.toggle('collapsed');
+        const btn = document.getElementById('right-toggle-btn');
+        btn.innerText = p.classList.contains('collapsed') ? '◂' : '▸';
+      }
+      function switchLobbyTab(tabName) {
+        // Remove active class from all panels
+        document.getElementById('lobby-panel-left').classList.remove('active-tab');
+        document.getElementById('lobby-panel-right').classList.remove('active-tab');
+        document.querySelector('.lobby-panel--center').classList.remove('active-tab');
+
+        // Add active-tab to selected panel
+        if (tabName === 'left') {
+          document.getElementById('lobby-panel-left').classList.add('active-tab');
+        } else if (tabName === 'right') {
+          document.getElementById('lobby-panel-right').classList.add('active-tab');
+        } else {
+          document.querySelector('.lobby-panel--center').classList.add('active-tab');
+        }
+
+        // Highlight selected tab button
+        const btns = document.querySelectorAll('.lobby-tab-btn');
+        btns.forEach((btn, index) => {
+          const names = ['left', 'center', 'right'];
+          if (names[index] === tabName) {
+            btn.classList.add('border-[#ff1744]', 'text-white');
+            btn.classList.remove('border-transparent', 'text-gray-500');
+          } else {
+            btn.classList.remove('border-[#ff1744]', 'text-white');
+            btn.classList.add('border-transparent', 'text-gray-500');
+          }
+        });
+      }
+    </script>
   </div>
 
   <!-- ═══════════════════════════════════════════════════════════
