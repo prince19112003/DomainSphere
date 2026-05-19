@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DomainSphere — Anime Hand Gesture Power System</title>
+  <meta name="description" content="Cast real anime powers with your hands. Real-time hand gesture detection powers Rasengan, Chidori, Domain Expansions, Hollow Purple, and Wolverine Claws using your webcam." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;900&family=JetBrains+Mono:wght@300;400;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <!-- ═══════════════════════════════════════════════════════════
+       LANDING SCREEN (Shown before camera is active)
+  ═══════════════════════════════════════════════════════════ -->
+  <div id="landing-screen">
+    <!-- Moving Nebulae & 3D scrolling ground -->
+    <div class="nebula-1"></div>
+    <div class="nebula-2"></div>
+    <div class="landing-grid-3d"></div>
+    <div class="landing-particles" id="landing-particles"></div>
+
+    <div class="lobby-container">
+      <!-- LEFT PANEL: SYSTEM DIAGNOSTICS -->
+      <div class="lobby-panel lobby-panel--left">
+        <div class="panel-tag">&gt;_ CORE_DIAGNOSTICS</div>
+        <div class="diag-group">
+          <div class="diag-line"><span>CAMERA STATUS:</span> <span class="text-glow">READY</span></div>
+          <div class="diag-line"><span>ACCELERATOR:</span> <span class="text-glow">WebGL 2.0</span></div>
+          <div class="diag-line"><span>TRACKING ENG:</span> <span>MediaPipe WASM</span></div>
+          <div class="diag-line"><span>LATENCY POOL:</span> <span>OPTIMIZED</span></div>
+          <div class="diag-line"><span>FPS ENFORCED:</span> <span>60 FPS</span></div>
+        </div>
+        <div class="matrix-readout">
+          <div class="matrix-bar"><div class="matrix-bar-fill fill-90"></div></div>
+          <div class="matrix-bar"><div class="matrix-bar-fill fill-75"></div></div>
+          <div class="matrix-bar"><div class="matrix-bar-fill fill-60"></div></div>
+        </div>
+        <!-- High-tech radar simulation -->
+        <div class="radar-scan">
+          <div class="radar-circle"></div>
+          <div class="radar-line"></div>
+        </div>
+      </div>
+
+      <!-- CENTER PANEL: CHAKRA ACTIVATOR LOBBY -->
+      <div class="lobby-panel lobby-panel--center">
+        <div class="brand-header">
+          <div class="brand-kana">ドメインスフィア</div>
+          <h1 class="brand-title">DOMAINSPHERE</h1>
+          <p class="brand-sub">Anime Hand Gesture Power System <span class="version-badge">v1.0</span></p>
+        </div>
+
+        <!-- Rotating wireframe hand preview -->
+        <div class="hand-preview-wrap">
+          <canvas id="preview-canvas" width="340" height="340"></canvas>
+          <div class="preview-ring ring-1"></div>
+          <div class="preview-ring ring-2"></div>
+          <div class="preview-ring ring-3"></div>
+          <div class="preview-scan-line"></div>
+        </div>
+
+        <button id="init-btn" class="init-button" aria-label="Initialize Chakra Sync">
+          <span class="btn-glow"></span>
+          <span class="btn-label">[ INITIALIZE CHAKRA SYNC ]</span>
+          <span class="btn-sub">Grant camera access to begin</span>
+        </button>
+
+        <p class="privacy-note">🔒 100% Local — No data leaves your device</p>
+      </div>
+
+      <!-- RIGHT PANEL: JUTSU SELECTION DATABASE -->
+      <div class="lobby-panel lobby-panel--right">
+        <div class="panel-tag">&gt;_ JUTSU_REGISTRY</div>
+        <div class="landing-power-list">
+          <div class="lpl-item" data-jutsu="heart"><span>💖 Heart Sanctuary</span></div>
+          <div class="lpl-item" data-jutsu="teleport"><span>💨 Body Flicker</span></div>
+          <div class="lpl-item" data-jutsu="rasengan"><span>🌀 Rasengan</span></div>
+          <div class="lpl-item" data-jutsu="chidori"><span>⚡ Chidori</span></div>
+          <div class="lpl-item" data-jutsu="katon"><span>🔥 Katon</span></div>
+          <div class="lpl-item" data-jutsu="gojo"><span>🔮 Gojo Domain</span></div>
+          <div class="lpl-item" data-jutsu="sukuna"><span>💀 Sukuna Domain</span></div>
+          <div class="lpl-item" data-jutsu="hollow"><span>🟣 Hollow Purple</span></div>
+          <div class="lpl-item" data-jutsu="wolverine"><span>🐺 Wolverine Claws</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════
+       MAIN HUD (Shown after sync is active)
+  ═══════════════════════════════════════════════════════════ -->
+  <div id="hud-screen" class="hidden">
+
+    <!-- Background grid -->
+    <div class="hud-grid-bg"></div>
+
+    <!-- Top bar -->
+    <header class="hud-topbar" role="banner">
+      <div class="topbar-brand">
+        <span class="tb-kana">領域展開</span>
+        <span class="tb-title">DOMAINSPHERE</span>
+      </div>
+      <div class="topbar-stats">
+        <div class="stat-pill" id="fps-display" aria-label="FPS">FPS: --</div>
+        <div class="stat-pill" id="latency-display" aria-label="Latency">LAT: --ms</div>
+        <div class="stat-pill" id="particles-display" aria-label="Particles">PTL: 0</div>
+        <div class="stat-pill" id="device-mode" aria-label="Device Mode">⚡ PERFORMANCE</div>
+      </div>
+      <div class="topbar-controls">
+        <button id="fullscreen-btn" class="ctrl-btn" title="Toggle Fullscreen" aria-label="Toggle Fullscreen">⛶ FULLSCREEN</button>
+        <button id="screenshot-btn" class="ctrl-btn" title="Snap Jutsu Screenshot" aria-label="Snap Jutsu Screenshot">📸 SNAP JUTSU</button>
+        <button id="stop-btn" class="ctrl-btn ctrl-btn--danger" title="Deactivate" aria-label="Deactivate Chakra Sync">⏹ DEACTIVATE</button>
+      </div>
+    </header>
+
+    <!-- Main arena -->
+    <main class="hud-main" role="main">
+
+      <!-- Left sidebar: Console Log -->
+      <aside class="sidebar sidebar--left" aria-label="Chakra Console">
+        <div class="sidebar-header">
+          <span class="sh-dot"></span>
+          <span class="sh-title">CHAKRA CONSOLE</span>
+        </div>
+        <div class="console-log" id="console-log" aria-live="polite" aria-label="Live System Log">
+          <div class="log-line log-line--system">[SYSTEM] Initializing sensor array...</div>
+        </div>
+
+        <!-- Waveform oscilloscope -->
+        <div class="sidebar-header mt-12">
+          <span class="sh-dot sh-dot--purple"></span>
+          <span class="sh-title">AUDIO WAVEFORM</span>
+        </div>
+        <div class="waveform-wrap">
+          <canvas id="waveform-canvas" width="220" height="60" aria-label="Audio waveform visualizer"></canvas>
+        </div>
+
+        <!-- Chakra charge meter -->
+        <div class="sidebar-header mt-12">
+          <span class="sh-dot sh-dot--orange"></span>
+          <span class="sh-title">CHAKRA CHARGE</span>
+        </div>
+        <div class="charge-wrap">
+          <div class="charge-bar-bg">
+            <div class="charge-bar-fill" id="charge-bar"></div>
+          </div>
+          <span class="charge-pct" id="charge-pct">0%</span>
+        </div>
+      </aside>
+
+      <!-- Center: Camera + Canvas overlay -->
+      <div class="arena-wrap">
+        <div class="arena-inner" id="arena">
+          <!-- Webcam feed -->
+          <video id="webcam-video" playsinline muted aria-label="Webcam feed" style="display:none;"></video>
+          <!-- Canvas showing flipped video + skeleton -->
+          <canvas id="tracking-canvas" aria-label="Hand tracking overlay"></canvas>
+          <!-- Three.js WebGL overlay -->
+          <canvas id="webgl-canvas" aria-label="3D effect overlay"></canvas>
+          <!-- Targeting reticle overlay -->
+          <div class="reticle" id="reticle" aria-hidden="true">
+            <div class="reticle-ring r-outer"></div>
+            <div class="reticle-ring r-mid"></div>
+            <div class="reticle-ring r-inner"></div>
+            <div class="reticle-corner rc-tl"></div>
+            <div class="reticle-corner rc-tr"></div>
+            <div class="reticle-corner rc-bl"></div>
+            <div class="reticle-corner rc-br"></div>
+            <div class="reticle-label" id="reticle-label">SCANNING...</div>
+          </div>
+          <!-- Idle overlay when no hand detected -->
+          <div class="no-hand-overlay" id="no-hand-overlay" role="status">
+            <div class="nho-icon">🖐</div>
+            <div class="nho-text">Show your hand to the camera</div>
+          </div>
+        </div>
+
+        <!-- Active jutsu banner -->
+        <div class="jutsu-banner" id="jutsu-banner" aria-live="assertive">
+          <span class="jb-name" id="jutsu-name">—</span>
+          <span class="jb-sub" id="jutsu-sub">Awaiting mudra...</span>
+        </div>
+      </div>
+
+      <!-- Right sidebar: Jutsu Codex -->
+      <aside class="sidebar sidebar--right" aria-label="Jutsu Codex and Manual">
+        <div class="sidebar-header">
+          <span class="sh-dot sh-dot--gold"></span>
+          <span class="sh-title">JUTSU CODEX</span>
+          <span class="sh-tip">Click for pose guide</span>
+        </div>
+        <div class="codex-list" id="codex-list">
+
+          <div class="codex-card" data-jutsu="heart" id="codex-heart" role="button" tabindex="0" aria-label="Heart Sanctuary pose guide">
+            <div class="cc-icon">💖</div>
+            <div class="cc-body">
+              <div class="cc-name">Heart Sanctuary</div>
+              <div class="cc-series">Mudra — Lover's Domain</div>
+              <div class="cc-gesture">Double Hand Heart</div>
+            </div>
+            <div class="cc-status" id="status-heart" aria-label="Status: inactive">○</div>
+          </div>
+
+          <div class="codex-card" data-jutsu="teleport" id="codex-teleport" role="button" tabindex="0" aria-label="Body Flicker Teleportation pose guide">
+            <div class="cc-icon">💨</div>
+            <div class="cc-body">
+              <div class="cc-name">Body Flicker</div>
+              <div class="cc-series">Shunshin — Teleport</div>
+              <div class="cc-gesture">Joined Fists</div>
+            </div>
+            <div class="cc-status" id="status-teleport" aria-label="Status: inactive">○</div>
+          </div>
+
+          <div class="codex-card" data-jutsu="rasengan" id="codex-rasengan" role="button" tabindex="0" aria-label="Rasengan pose guide">
+            <div class="cc-icon">🌀</div>
+            <div class="cc-body">
+              <div class="cc-name">Rasengan</div>
+              <div class="cc-series">Naruto</div>
+              <div class="cc-gesture">Open Palm</div>
+            </div>
+            <div class="cc-status" id="status-rasengan" aria-label="Status: inactive">○</div>
+          </div>
+
+          <div class="codex-card" data-jutsu="chidori" id="codex-chidori" role="button" tabindex="0" aria-label="Chidori pose guide">
+            <div class="cc-icon">⚡</div>
+            <div class="cc-body">
+              <div class="cc-name">Chidori</div>
+              <div class="cc-series">Naruto</div>
+              <div class="cc-gesture">Closed Fist</div>
+            </div>
+            <div class="cc-status" id="status-chidori" aria-label="Status: inactive">○</div>
+          </div>
+
+          <div class="codex-card" data-jutsu="katon" id="codex-katon" role="button" tabindex="0" aria-label="Katon pose guide">
+            <div class="cc-icon">🔥</div>
+            <div class="cc-body">
+              <div class="cc-name">Katon Fireball</div>
+              <div class="cc-series">Naruto</div>
+              <div class="cc-gesture">Tiger Mudra</div>
+            </div>
+            <div class="cc-status" id="status-katon" aria-label="Status: inactive">○</div>
+          </div>
+
+          <div class="codex-card" data-jutsu="gojo" id="codex-gojo" role="button" tabindex="0" aria-label="Gojo Domain Expansion pose guide">
+            <div class="cc-icon">🔮</div>
+            <div class="cc-body">
+              <div class="cc-name">Infinite Void</div>
+              <div class="cc-series">JJK — Gojo</div>
+              <div class="cc-gesture">Double Crossed Fingers</div>
+            </div>
+            <div class="cc-status" id="status-gojo" aria-label="Status: inactive">○</div>
+          </div>
+
+          <div class="codex-card" data-jutsu="sukuna" id="codex-sukuna" role="button" tabindex="0" aria-label="Sukuna Domain Expansion pose guide">
+            <div class="cc-icon">💀</div>
+            <div class="cc-body">
+              <div class="cc-name">Malevolent Shrine</div>
+              <div class="cc-series">JJK — Sukuna</div>
+              <div class="cc-gesture">Enmaten Mudra (Dual)</div>
+            </div>
+            <div class="cc-status" id="status-sukuna" aria-label="Status: inactive">○</div>
+          </div>
+
+          <div class="codex-card" data-jutsu="hollow" id="codex-hollow" role="button" tabindex="0" aria-label="Hollow Purple pose guide">
+            <div class="cc-icon">🟣</div>
+            <div class="cc-body">
+              <div class="cc-name">Hollow Purple</div>
+              <div class="cc-series">JJK — Gojo</div>
+              <div class="cc-gesture">Pinch Forward</div>
+            </div>
+            <div class="cc-status" id="status-hollow" aria-label="Status: inactive">○</div>
+          </div>
+
+          <div class="codex-card" data-jutsu="wolverine" id="codex-wolverine" role="button" tabindex="0" aria-label="Wolverine Claws pose guide">
+            <div class="cc-icon">🐺</div>
+            <div class="cc-body">
+              <div class="cc-name">Adamantium Claws</div>
+              <div class="cc-series">Marvel — Wolverine</div>
+              <div class="cc-gesture">Knuckle Fist</div>
+            </div>
+            <div class="cc-status" id="status-wolverine" aria-label="Status: inactive">○</div>
+          </div>
+
+        </div>
+
+        <!-- Color customizer -->
+        <div class="sidebar-header mt-12">
+          <span class="sh-dot sh-dot--cyan"></span>
+          <span class="sh-title">CHAKRA COLOR</span>
+        </div>
+        <div class="color-picker-row">
+          <input type="color" id="chakra-color-picker" value="#00f0ff" title="Pick chakra color" aria-label="Chakra color picker" />
+          <label for="chakra-color-picker">Aura Color</label>
+        </div>
+        <div class="toggle-row">
+          <label class="toggle-label" for="skeleton-toggle">Show Skeleton</label>
+          <input type="checkbox" id="skeleton-toggle" checked aria-label="Toggle hand skeleton overlay" />
+        </div>
+        <div class="toggle-row">
+          <label class="toggle-label" for="sound-toggle">Sound</label>
+          <input type="checkbox" id="sound-toggle" checked aria-label="Toggle audio" />
+        </div>
+      </aside>
+
+    </main>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════
+       POSE GUIDE MODAL
+  ═══════════════════════════════════════════════════════════ -->
+  <div id="pose-modal" class="pose-modal hidden" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+    <div class="pm-backdrop" id="modal-backdrop"></div>
+    <div class="pm-panel">
+      <button class="pm-close" id="modal-close" aria-label="Close pose guide">✕</button>
+      <div class="pm-header">
+        <span class="pm-icon" id="modal-icon">🌀</span>
+        <div>
+          <h2 class="pm-title" id="modal-title">Rasengan</h2>
+          <p class="pm-series" id="modal-series">Naruto · Uzumaki Naruto</p>
+        </div>
+      </div>
+      <div class="pm-body">
+        <div class="pm-pose-visual" id="modal-pose-visual">
+          <!-- Finger diagram rendered here -->
+        </div>
+        <div class="pm-steps" id="modal-steps">
+          <!-- Step-by-step instructions rendered here -->
+        </div>
+      </div>
+      <div class="pm-tip" id="modal-tip"></div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════
+       SCREENSHOT OVERLAY
+  ═══════════════════════════════════════════════════════════ -->
+  <div id="screenshot-overlay" class="screenshot-overlay hidden" role="dialog" aria-modal="true" aria-label="Jutsu Screenshot">
+    <div class="sso-backdrop" id="sso-backdrop"></div>
+    <div class="sso-panel">
+      <div class="sso-title">📸 JUTSU SNAP CAPTURED</div>
+      <canvas id="screenshot-canvas" aria-label="Jutsu screenshot preview"></canvas>
+      <div class="sso-controls">
+        <a id="download-btn" class="sso-btn" download="jutsu-snap.png">⬇ DOWNLOAD</a>
+        <button id="sso-close" class="sso-btn sso-btn--close">✕ CLOSE</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- CDN Scripts -->
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/selfie_segmentation/selfie_segmentation.js" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
+
+  <!-- Hidden segmentation composite canvas (person-over-black) -->
+  <canvas id="seg-canvas" style="display:none;"></canvas>
+
+  <!-- App modules -->
+  <script type="module" src="app.js"></script>
+</body>
+</html>
