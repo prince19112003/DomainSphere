@@ -38,6 +38,18 @@ function angleBetween(A, B, C) {
   return Math.acos(Math.min(1, Math.max(-1, dot/mag))) * (180/Math.PI);
 }
 
+/** Returns true if index and middle finger are crossed (tip order swapped relative to knuckles) */
+function isFingersCrossed(lm) {
+  const dx_knuckle = lm[INDEX_MCP].x - lm[MIDDLE_MCP].x;
+  const dy_knuckle = lm[INDEX_MCP].y - lm[MIDDLE_MCP].y;
+  
+  const dx_tip = lm[INDEX_TIP].x - lm[MIDDLE_TIP].x;
+  const dy_tip = lm[INDEX_TIP].y - lm[MIDDLE_TIP].y;
+  
+  const dot = dx_knuckle * dx_tip + dy_knuckle * dy_tip;
+  return dot < 0.0;
+}
+
 // ─── Gesture Detector Functions ─────────────────────────────────────
 
 /**
@@ -99,9 +111,8 @@ function detectGojoDomain(hands) {
     const ringFold = isFingerFolded(lm, RING_TIP, RING_MCP);
     const pinkyFold = isFingerFolded(lm, PINKY_TIP, PINKY_MCP);
     
-    // Middle finger crosses over index finger
-    const crossed = Math.abs(lm[MIDDLE_TIP].x - lm[INDEX_TIP].x) < 0.08 &&
-                    lm[MIDDLE_TIP].y < lm[INDEX_PIP].y;
+    // Middle finger crosses over index finger (using robust dot product check)
+    const crossed = isFingersCrossed(lm);
                     
     return indexExt && middleExt && ringFold && pinkyFold && crossed;
   };
@@ -132,8 +143,8 @@ function detectSukunaDomain(hands) {
   const h2_up = lm2[INDEX_TIP].y < lm2[INDEX_MCP].y && lm2[MIDDLE_TIP].y < lm2[MIDDLE_MCP].y;
   
   // Verify fingers are NOT crossed to prevent collision with Gojo's gesture
-  const h1_crossed = Math.abs(lm1[MIDDLE_TIP].x - lm1[INDEX_TIP].x) < 0.06 && lm1[MIDDLE_TIP].y < lm1[INDEX_PIP].y;
-  const h2_crossed = Math.abs(lm2[MIDDLE_TIP].x - lm2[INDEX_TIP].x) < 0.06 && lm2[MIDDLE_TIP].y < lm2[INDEX_PIP].y;
+  const h1_crossed = isFingersCrossed(lm1);
+  const h2_crossed = isFingersCrossed(lm2);
   
   // In Enmaten Mudra, wrists are close, index/middle tips are touching or close, palms inclined
   if (h1_up && h2_up && !h1_crossed && !h2_crossed && indexDist < 0.20 && middleDist < 0.20 && wristDist < 0.32) {
