@@ -261,59 +261,47 @@
         <div class="stat-pill" id="latency-display" aria-label="Latency">LAT: --ms</div>
         <div class="stat-pill" id="particles-display" aria-label="Particles">PTL: 0</div>
         <div class="stat-pill" id="device-mode" aria-label="Device Mode">⚡ PERFORMANCE</div>
+        <!-- Charge bar in header -->
+        <div class="hdr-charge-wrap" title="Chakra Charge">
+          <div class="hdr-charge-bg">
+            <div class="hdr-charge-fill" id="charge-bar"></div>
+          </div>
+          <span class="hdr-charge-pct" id="charge-pct">0%</span>
+        </div>
       </div>
       <div class="topbar-controls">
+        <!-- Settings inline -->
+        <div class="hdr-setting-group">
+          <input type="color" id="chakra-color-picker" value="#00f0ff" title="Aura Color" aria-label="Chakra color picker" class="hdr-color-input" />
+          <label for="chakra-color-picker" class="hdr-setting-label">AURA</label>
+        </div>
+        <div class="hdr-setting-group">
+          <input type="checkbox" id="skeleton-toggle" checked aria-label="Toggle skeleton" class="hdr-checkbox" />
+          <label for="skeleton-toggle" class="hdr-setting-label">SKEL</label>
+        </div>
+        <div class="hdr-setting-group">
+          <input type="checkbox" id="sound-toggle" checked aria-label="Toggle audio" class="hdr-checkbox" />
+          <label for="sound-toggle" class="hdr-setting-label">SFX</label>
+        </div>
         <button id="fullscreen-btn" class="ctrl-btn" title="Toggle Fullscreen" aria-label="Toggle Fullscreen">⛶ FULLSCREEN</button>
-        <button id="screenshot-btn" class="ctrl-btn" title="Snap Jutsu Screenshot" aria-label="Snap Jutsu Screenshot">📸 SNAP JUTSU</button>
-        <button id="camera-toggle-btn" class="ctrl-btn ctrl-btn--danger" title="Toggle Camera Feed" aria-label="Toggle Camera Feed">📷 CAMERA OFF</button>
-        <button id="exit-btn" class="ctrl-btn" title="Exit Interface" aria-label="Exit to Lobby">🚪 EXIT SYSTEM</button>
+        <button id="screenshot-btn" class="ctrl-btn" title="Snap Jutsu Screenshot" aria-label="Snap Jutsu Screenshot">📸 SNAP</button>
+        <button id="camera-toggle-btn" class="ctrl-btn ctrl-btn--danger" title="Toggle Camera Feed" aria-label="Toggle Camera Feed">📷 CAM OFF</button>
+        <button id="exit-btn" class="ctrl-btn" title="Exit Interface" aria-label="Exit to Lobby">🚪 EXIT</button>
       </div>
     </header>
 
-    <!-- Main arena -->
+    <!-- Main arena: full screen, no sidebars -->
     <main class="hud-main" role="main">
-
-      <!-- Left sidebar: Console Log -->
-      <aside class="sidebar sidebar--left" aria-label="Chakra Console">
-        <div class="sidebar-header">
-          <span class="sh-dot"></span>
-          <span class="sh-title">CHAKRA CONSOLE</span>
-        </div>
-        <div class="console-log" id="console-log" aria-live="polite" aria-label="Live System Log">
-          <div class="log-line log-line--system">[SYSTEM] Initializing sensor array...</div>
-        </div>
-
-        <!-- Waveform oscilloscope -->
-        <div class="sidebar-header mt-12">
-          <span class="sh-dot sh-dot--purple"></span>
-          <span class="sh-title">AUDIO WAVEFORM</span>
-        </div>
-        <div class="waveform-wrap">
-          <canvas id="waveform-canvas" width="220" height="60" aria-label="Audio waveform visualizer"></canvas>
-        </div>
-
-        <!-- Chakra charge meter -->
-        <div class="sidebar-header mt-12">
-          <span class="sh-dot sh-dot--orange"></span>
-          <span class="sh-title">CHAKRA CHARGE</span>
-        </div>
-        <div class="charge-wrap">
-          <div class="charge-bar-bg">
-            <div class="charge-bar-fill" id="charge-bar"></div>
-          </div>
-          <span class="charge-pct" id="charge-pct">0%</span>
-        </div>
-      </aside>
-
-      <!-- Center: Camera + Canvas overlay -->
       <div class="arena-wrap">
         <div class="arena-inner" id="arena">
           <!-- Webcam feed (shown as PIP corner overlay) -->
           <video id="webcam-video" playsinline muted aria-label="Webcam feed" style="opacity:0;"></video>
-          <!-- Canvas showing flipped video + skeleton -->
-          <canvas id="tracking-canvas" aria-label="Hand tracking overlay"></canvas>
-          <!-- Three.js WebGL overlay -->
+          <!-- Skeleton canvas clipped to PIP size — sits inside/over the PIP -->
+          <canvas id="pip-skeleton-canvas" aria-label="PIP hand skeleton" style="position:absolute;bottom:20px;right:20px;width:220px;height:165px;z-index:55;pointer-events:none;transform:scaleX(-1);"></canvas>
+          <!-- Three.js WebGL overlay — full arena -->
           <canvas id="webgl-canvas" aria-label="3D effect overlay"></canvas>
+          <!-- Tracking canvas — kept for reticle/coordinate math but NOT drawn on screen -->
+          <canvas id="tracking-canvas" aria-label="Hand tracking overlay" style="display:none;"></canvas>
           <!-- Targeting reticle overlay -->
           <div class="reticle" id="reticle" aria-hidden="true">
             <div class="reticle-ring r-outer"></div>
@@ -345,111 +333,9 @@
           <span class="jb-sub" id="jutsu-sub">Awaiting mudra...</span>
         </div>
       </div>
-
-      <!-- Right sidebar: Jutsu Codex -->
-      <aside class="sidebar sidebar--right" aria-label="Jutsu Codex and Manual">
-        <div class="sidebar-header">
-          <span class="sh-dot sh-dot--gold"></span>
-          <span class="sh-title">JUTSU CODEX</span>
-          <span class="sh-tip">Click for pose guide</span>
-        </div>
-        <div class="codex-list" id="codex-list">
-
-          <div class="codex-card" data-jutsu="heart" id="codex-heart" role="button" tabindex="0" aria-label="Heart Sanctuary pose guide">
-            <div class="cc-icon">💖</div>
-            <div class="cc-body">
-              <div class="cc-name">Heart Sanctuary</div>
-              <div class="cc-series">Mudra — Lover's Domain</div>
-              <div class="cc-gesture">Double Hand Heart</div>
-            </div>
-            <div class="cc-status" id="status-heart" aria-label="Status: inactive">○</div>
-          </div>
-
-          <div class="codex-card" data-jutsu="teleport" id="codex-teleport" role="button" tabindex="0" aria-label="Body Flicker Teleportation pose guide">
-            <div class="cc-icon">💨</div>
-            <div class="cc-body">
-              <div class="cc-name">Body Flicker</div>
-              <div class="cc-series">Shunshin — Teleport</div>
-              <div class="cc-gesture">Joined Fists</div>
-            </div>
-            <div class="cc-status" id="status-teleport" aria-label="Status: inactive">○</div>
-          </div>
-
-          <div class="codex-card" data-jutsu="rasengan" id="codex-rasengan" role="button" tabindex="0" aria-label="Rasengan pose guide">
-            <div class="cc-icon">🌀</div>
-            <div class="cc-body">
-              <div class="cc-name">Rasengan</div>
-              <div class="cc-series">Naruto</div>
-              <div class="cc-gesture">Open Palm</div>
-            </div>
-            <div class="cc-status" id="status-rasengan" aria-label="Status: inactive">○</div>
-          </div>
-
-          <div class="codex-card" data-jutsu="chidori" id="codex-chidori" role="button" tabindex="0" aria-label="Chidori pose guide">
-            <div class="cc-icon">⚡</div>
-            <div class="cc-body">
-              <div class="cc-name">Chidori</div>
-              <div class="cc-series">Naruto</div>
-              <div class="cc-gesture">Closed Fist</div>
-            </div>
-            <div class="cc-status" id="status-chidori" aria-label="Status: inactive">○</div>
-          </div>
-
-          <div class="codex-card" data-jutsu="gojo" id="codex-gojo" role="button" tabindex="0" aria-label="Gojo Domain Expansion pose guide">
-            <div class="cc-icon">🔮</div>
-            <div class="cc-body">
-              <div class="cc-name">Infinite Void</div>
-              <div class="cc-series">JJK — Gojo</div>
-              <div class="cc-gesture">Horns (Back Faced)</div>
-            </div>
-            <div class="cc-status" id="status-gojo" aria-label="Status: inactive">○</div>
-          </div>
-
-          <div class="codex-card" data-jutsu="sukuna" id="codex-sukuna" role="button" tabindex="0" aria-label="Sukuna Domain Expansion pose guide">
-            <div class="cc-icon">💀</div>
-            <div class="cc-body">
-              <div class="cc-name">Malevolent Shrine</div>
-              <div class="cc-series">JJK — Sukuna</div>
-              <div class="cc-gesture">Enmaten Mudra (Dual)</div>
-            </div>
-            <div class="cc-status" id="status-sukuna" aria-label="Status: inactive">○</div>
-          </div>
-
-          <div class="codex-card" data-jutsu="hollow" id="codex-hollow" role="button" tabindex="0" aria-label="Hollow Purple pose guide">
-            <div class="cc-icon">🟣</div>
-            <div class="cc-body">
-              <div class="cc-name">Hollow Purple</div>
-              <div class="cc-series">JJK — Gojo</div>
-              <div class="cc-gesture">Pinch Forward</div>
-            </div>
-            <div class="cc-status" id="status-hollow" aria-label="Status: inactive">○</div>
-          </div>
-
-          
-        </div>
-
-        <!-- Color customizer -->
-        <div class="sidebar-header mt-12">
-          <span class="sh-dot sh-dot--cyan"></span>
-          <span class="sh-title">CHAKRA COLOR</span>
-        </div>
-        <div class="color-picker-row">
-          <input type="color" id="chakra-color-picker" value="#00f0ff" title="Pick chakra color" aria-label="Chakra color picker" />
-          <label for="chakra-color-picker">Aura Color</label>
-        </div>
-
-        <div class="toggle-row">
-          <label class="toggle-label" for="skeleton-toggle">Show Skeleton</label>
-          <input type="checkbox" id="skeleton-toggle" checked aria-label="Toggle hand skeleton overlay" />
-        </div>
-        <div class="toggle-row">
-          <label class="toggle-label" for="sound-toggle">Sound</label>
-          <input type="checkbox" id="sound-toggle" checked aria-label="Toggle audio" />
-        </div>
-      </aside>
-
     </main>
   </div>
+
 
   <!-- ═══════════════════════════════════════════════════════════
        POSE GUIDE MODAL

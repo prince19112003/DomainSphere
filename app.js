@@ -16,6 +16,8 @@ let videoEl = null;
 let trackingCanvas = null;
 let trackingCtx = null;
 let webglCanvas = null;
+let pipSkeletonCanvas = null;
+let pipSkeletonCtx = null;
 let animRunning = false;
 
 let currentGesture = null;
@@ -164,7 +166,14 @@ async function startSystem() {
   videoEl.style.opacity = '1';
   trackingCanvas = $('tracking-canvas');
   webglCanvas = $('webgl-canvas');
+  pipSkeletonCanvas = $('pip-skeleton-canvas');
   fpsDisplay = $('fps-display');
+
+  if (pipSkeletonCanvas) {
+    pipSkeletonCanvas.width = 220;
+    pipSkeletonCanvas.height = 165;
+    pipSkeletonCtx = pipSkeletonCanvas.getContext('2d');
+  }
 
   // Match canvas dimensions to arena
   function resizeCanvases() {
@@ -294,6 +303,10 @@ function onHandResults(results) {
     const W = trackingCanvas.width, H = trackingCanvas.height;
     trackingCtx.clearRect(0, 0, W, H);
 
+    if (pipSkeletonCtx) {
+      pipSkeletonCtx.clearRect(0, 0, pipSkeletonCanvas.width, pipSkeletonCanvas.height);
+    }
+
     if (!results.multiHandLandmarks || results.multiHandLandmarks.length === 0) {
       $('no-hand-overlay').style.display = '';
       $('reticle').classList.remove('visible');
@@ -346,8 +359,8 @@ function onHandResults(results) {
     reticle.classList.add('visible');
 
     // Draw skeleton if enabled (draw for all detected hands)
-    if (showSkeleton) {
-      renderMultiHands.forEach(handLm => drawSkeleton(handLm, W, H));
+    if (showSkeleton && pipSkeletonCtx) {
+      renderMultiHands.forEach(handLm => drawSkeleton(handLm, pipSkeletonCtx, pipSkeletonCanvas.width, pipSkeletonCanvas.height));
     }
 
     // Classify gesture using ALL hands (use raw landmarks for 100% accurate classification)
@@ -444,14 +457,13 @@ const CONNECTIONS = [
   [5,9],[9,13],[13,17],
 ];
 
-function drawSkeleton(lm, W, H) {
-  const ctx = trackingCtx;
+function drawSkeleton(lm, ctx, W, H) {
   ctx.save();
 
   CONNECTIONS.forEach(([a, b]) => {
     const p1 = lm[a], p2 = lm[b];
-    const x1 = (1-p1.x)*W, y1 = p1.y*H;
-    const x2 = (1-p2.x)*W, y2 = p2.y*H;
+    const x1 = p1.x * W, y1 = p1.y * H;
+    const x2 = p2.x * W, y2 = p2.y * H;
     const grd = ctx.createLinearGradient(x1,y1,x2,y2);
     grd.addColorStop(0, chakraColor + 'cc');
     grd.addColorStop(1, chakraColor + '88');
@@ -463,7 +475,7 @@ function drawSkeleton(lm, W, H) {
   });
 
   lm.forEach((p, i) => {
-    const x = (1-p.x)*W, y = p.y*H;
+    const x = p.x * W, y = p.y * H;
     const isTip = [4,8,12,16,20].includes(i);
     const r = isTip ? 5 : 3.5;
     const grd = ctx.createRadialGradient(x,y,0,x,y,r*2);
@@ -511,6 +523,11 @@ function updateCodexStatus(activeId) {
 
 // ─── Console Log ─────────────────────────────────────────────────────
 function log(msg, type = 'system') {
+  const formattedMsg = `[${new Date().toLocaleTimeString()}] [${type.toUpperCase()}] ${msg}`;
+  if (type === 'danger' || type === 'error') console.error(formattedMsg);
+  else if (type === 'warn') console.warn(formattedMsg);
+  else console.log(formattedMsg);
+
   const el = $('console-log');
   if (!el) return;
   const line = document.createElement('div');
