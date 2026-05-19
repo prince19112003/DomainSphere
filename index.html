@@ -308,8 +308,8 @@
       <!-- Center: Camera + Canvas overlay -->
       <div class="arena-wrap">
         <div class="arena-inner" id="arena">
-          <!-- Webcam feed -->
-          <video id="webcam-video" playsinline muted aria-label="Webcam feed" style="display:none;"></video>
+          <!-- Webcam feed (shown as PIP corner overlay) -->
+          <video id="webcam-video" playsinline muted aria-label="Webcam feed" style="opacity:0;"></video>
           <!-- Canvas showing flipped video + skeleton -->
           <canvas id="tracking-canvas" aria-label="Hand tracking overlay"></canvas>
           <!-- Three.js WebGL overlay -->
@@ -437,10 +437,7 @@
           <input type="color" id="chakra-color-picker" value="#00f0ff" title="Pick chakra color" aria-label="Chakra color picker" />
           <label for="chakra-color-picker">Aura Color</label>
         </div>
-        <div class="color-picker-row mt-12">
-          <input type="range" id="person-scale-slider" min="0.4" max="1.0" step="0.05" value="0.6" title="Scale camera person" style="width: 80px; accent-color: var(--cyan); background: rgba(255,255,255,0.1); border: none; height: 6px; border-radius: 3px; cursor: pointer;" />
-          <label for="person-scale-slider">Person Scale</label>
-        </div>
+
         <div class="toggle-row">
           <label class="toggle-label" for="skeleton-toggle">Show Skeleton</label>
           <input type="checkbox" id="skeleton-toggle" checked aria-label="Toggle hand skeleton overlay" />
@@ -498,11 +495,7 @@
   <!-- CDN Scripts -->
   <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
   <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/selfie_segmentation/selfie_segmentation.js" crossorigin="anonymous"></script>
   <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
-
-  <!-- Hidden segmentation composite canvas (person-over-black) -->
-  <canvas id="seg-canvas" style="display:none;"></canvas>
 
   <!-- Black hole transition overlay with white air vortex -->
   <div id="blackhole-overlay">

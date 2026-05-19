@@ -17,7 +17,6 @@ let trackingCanvas = null;
 let trackingCtx = null;
 let webglCanvas = null;
 let animRunning = false;
-let segCanvas = null;  // BG-removal compositing canvas (module-level for onHandResults access)
 
 let currentGesture = null;
 let pendingGesture = null;
@@ -162,6 +161,7 @@ async function startSystem() {
   $('hud-screen').classList.remove('hidden');
 
   videoEl = $('webcam-video');
+  videoEl.style.opacity = '1';
   trackingCanvas = $('tracking-canvas');
   webglCanvas = $('webgl-canvas');
   fpsDisplay = $('fps-display');
@@ -196,27 +196,6 @@ async function startSystem() {
     minTrackingConfidence: 0.65,
   });
   hands.onResults(onHandResults);
-
-  // ── Segmentation setup ──────────────────────────────────────────
-  let segmentation = null;
-  let segCtx = null;
-  let segReady = false;
-
-  segCanvas = document.getElementById('seg-canvas');
-  segCtx = segCanvas.getContext('2d');
-
-  try {
-    segmentation = new SelfieSegmentation({
-      locateFile: f => `https://cdn.jsdelivr.net/npm/@mediapipe/selfie_segmentation/${f}`
-    });
-    segmentation.setOptions({ modelSelection: 1 }); // 1 = landscape model, more accurate
-    segmentation.onResults(onSegResults);
-    await segmentation.initialize();
-    segReady = true;
-    log('[SEGMENT] Background removal initialized ✓', 'success');
-  } catch(e) {
-    log('[SEGMENT] BG removal unavailable, using raw feed', 'warn');
-  }
 
   // Query all video devices to select built-in system cam and bypass virtual cameras (like Iriun)
   try {
@@ -278,15 +257,7 @@ async function startSystem() {
       if (!cameraActive) return;
       if (videoEl.readyState >= 3) {
         latStart = performance.now();
-        if (segReady) {
-          // Resize segCanvas to match video
-          segCanvas.width = videoEl.videoWidth;
-          segCanvas.height = videoEl.videoHeight;
-          await segmentation.send({ image: videoEl });
-          // onSegResults will call hands.send with the composited image
-        } else {
-          await hands.send({ image: videoEl });
-        }
+        await hands.send({ image: videoEl });
       }
       requestAnimationFrame(processFrame);
     }
@@ -294,35 +265,6 @@ async function startSystem() {
 
   } catch (err) {
     log(`[CAMERA ERROR] Could not initialize: ${err.message}`, 'danger');
-  }
-
-  // ── Segmentation results: composite person over black, then send to Hands ──
-  async function onSegResults(results) {
-    if (!results.segmentationMask) return;
-
-    const w = segCanvas.width, h = segCanvas.height;
-
-    // Clear context
-    segCtx.clearRect(0, 0, w, h);
-
-    // 1. Draw the segmentation mask
-    segCtx.drawImage(results.segmentationMask, 0, 0, w, h);
-
-    // 2. Draw the original video frame only where the mask is active (source-in)
-    segCtx.save();
-    segCtx.globalCompositeOperation = 'source-in';
-    segCtx.drawImage(results.image, 0, 0, w, h);
-    segCtx.restore();
-
-    // 3. Fill solid black background behind the person (destination-over)
-    segCtx.save();
-    segCtx.globalCompositeOperation = 'destination-over';
-    segCtx.fillStyle = '#000000';
-    segCtx.fillRect(0, 0, w, h);
-    segCtx.restore();
-
-    // 4. Send composited frame (person-only over black) to MediaPipe Hands
-    await hands.send({ image: segCanvas });
   }
 
 
@@ -352,25 +294,6 @@ function onHandResults(results) {
     const W = trackingCanvas.width, H = trackingCanvas.height;
     trackingCtx.clearRect(0, 0, W, H);
 
-    const personScaleSlider = $('person-scale-slider');
-    const personScale = personScaleSlider ? parseFloat(personScaleSlider.value) : 1.0;
-
-    // Draw mirrored and scaled frame centered
-    trackingCtx.save();
-    trackingCtx.scale(-1, 1);
-    const drawSource = (typeof segCanvas !== 'undefined' && segCanvas && segCanvas.width > 0)
-      ? segCanvas
-      : results.image;
-    if (drawSource) {
-      const scaleWidth = W * personScale;
-      const scaleHeight = H * personScale;
-      const x = (W - scaleWidth) / 2;
-      const y = (H - scaleHeight) / 2;
-      trackingCtx.drawImage(drawSource, -W + x, y, scaleWidth, scaleHeight);
-    }
-    trackingCtx.restore();
-
-
     if (!results.multiHandLandmarks || results.multiHandLandmarks.length === 0) {
       $('no-hand-overlay').style.display = '';
       $('reticle').classList.remove('visible');
@@ -393,12 +316,12 @@ function onHandResults(results) {
 
     const multiHands = results.multiHandLandmarks;
     
-    // Scale landmarks for rendering coordinates
+    // Mapped directly to full screen coordinates
     const renderMultiHands = multiHands.map(hand => {
       return hand.map(lm => ({
-        x: (1 - personScale) / 2 + lm.x * personScale,
-        y: (1 - personScale) / 2 + lm.y * personScale,
-        z: lm.z * personScale
+        x: lm.x,
+        y: lm.y,
+        z: lm.z
       }));
     });
     const lm = renderMultiHands[0];
@@ -464,7 +387,7 @@ function onHandResults(results) {
         $('reticle-label').textContent = gesture.label.toUpperCase();
 
         // Update position and charge
-        engine.setHandPosition(palmCenter.x, palmCenter.y, personScale);
+        engine.setHandPosition(palmCenter.x, palmCenter.y, 1.0);
         engine.updateEffect(charge);
         updateGestureAudio(gesture.id, charge);
         
@@ -986,6 +909,7 @@ async function toggleCameraState() {
         log(`[SYSTEM] Camera stop error: ${err.message}`, 'warn');
       }
     }
+    videoEl.style.opacity = '0';
     $('camera-offline-overlay').style.display = 'flex';
     $('camera-toggle-btn').textContent = '📷 CAMERA ON';
     $('camera-toggle-btn').classList.remove('ctrl-btn--danger');
@@ -993,6 +917,7 @@ async function toggleCameraState() {
     log('[SYSTEM] Camera sensors deactivated. Console workspace active.', 'warn');
   } else {
     cameraActive = true;
+    videoEl.style.opacity = '1';
     $('camera-offline-overlay').style.display = 'none';
     $('camera-toggle-btn').textContent = '📷 CAMERA OFF';
     $('camera-toggle-btn').classList.add('ctrl-btn--danger');
@@ -1020,6 +945,7 @@ $('exit-btn').addEventListener('click', () => {
       camera.stop();
     } catch(err) {}
   }
+  if (videoEl) videoEl.style.opacity = '0';
   $('landing-screen').classList.remove('hidden');
   $('hud-screen').classList.add('hidden');
   currentGesture = null;

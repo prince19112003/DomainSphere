@@ -438,6 +438,31 @@
 #webgl-canvas { pointer-events: none; }
 #tracking-canvas { display: block; }
 
+#webcam-video {
+  position: absolute;
+  bottom: 20px;
+  right: 20px;
+  width: 220px;
+  height: 165px;
+  object-fit: cover;
+  border: 1.5px solid var(--border);
+  border-radius: 4px;
+  z-index: 50;
+  transform: scaleX(-1); /* Mirror camera feed */
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.8), 0 0 15px rgba(255, 23, 68, 0.15);
+  background: #000;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+}
+@media (max-width: 650px) {
+  #webcam-video {
+    width: 130px;
+    height: 98px;
+    bottom: 10px;
+    right: 10px;
+  }
+}
+
 /* Reticle */
 .reticle { position: absolute; pointer-events: none; width: 80px; height: 80px; transform: translate(-50%, -50%); z-index: 5; opacity: 0; transition: opacity 0.3s; }
 .reticle.visible { opacity: 1; }

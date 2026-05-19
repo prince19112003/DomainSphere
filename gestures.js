@@ -104,14 +104,12 @@ function detectChidori(hands) {
 
 /**
  * 🔮 GOJO DOMAIN — Sign of the Horns (Back of Hand facing camera)
- * Index and pinky extended, middle and ring folded, palm facing the user (back facing camera).
+ * Index and pinky extended, middle and ring folded.
+ * We bypass the palm-facing camera check here because MediaPipe systematically misclassifies 
+ * handedness when the back of the hand faces the camera, which causes false negatives.
  */
 function detectGojoDomain(hands, handednessList = []) {
   const lm = hands[0];
-  const handedness = (handednessList && handednessList[0]) ? handednessList[0].label : 'Right';
-  
-  // Must NOT face the camera (back of hand faces camera)
-  if (isPalmFacingCamera(lm, handedness)) return 0.0;
   
   const indexExtended = isFingerExtended(lm, INDEX_TIP, INDEX_PIP);
   const pinkyExtended = isFingerExtended(lm, PINKY_TIP, PINKY_PIP);
