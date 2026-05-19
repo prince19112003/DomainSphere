@@ -100,44 +100,25 @@ function detectChidori(hands) {
   return (index && middle && ring && pinky && notOpen) ? 1.0 : 0.0;
 }
 
+
+
 /**
- * 🔥 KATON — Tiger Mudra
- * Index + middle fingers extended, ring + pinky folded
+ * 🔮 GOJO DOMAIN — Sign of the Horns (Back of Hand facing camera)
+ * Index and pinky extended, middle and ring folded, palm facing the user (back facing camera).
  */
-function detectKaton(hands) {
+function detectGojoDomain(hands, handednessList = []) {
   const lm = hands[0];
-  const index  = isFingerExtended(lm, INDEX_TIP, INDEX_PIP);
-  const middle = isFingerExtended(lm, MIDDLE_TIP, MIDDLE_PIP);
-  const ring   = isFingerFolded(lm, RING_TIP, RING_MCP);
-  const pinky  = isFingerFolded(lm, PINKY_TIP, PINKY_MCP);
-  // Index and middle should be close together (not spread like a V)
-  const spread = Math.abs(lm[INDEX_TIP].x - lm[MIDDLE_TIP].x);
-  const together = spread < 0.06;
-  return (index && middle && ring && pinky && together) ? 1.0 : 0.0;
-}
-
-/**
- * 🔮 GOJO DOMAIN — Crossed Fingers (Middle over Index)
- * Middle finger tip is to the side of/over index finger
- */
-function detectGojoDomain(hands) {
-  if (hands.length < 2) return 0.0;
+  const handedness = (handednessList && handednessList[0]) ? handednessList[0].label : 'Right';
   
-  const checkHandCrossed = (lm) => {
-    // Both index and middle extended, ring and pinky folded
-    const indexExt = isFingerExtended(lm, INDEX_TIP, INDEX_PIP);
-    const middleExt = isFingerExtended(lm, MIDDLE_TIP, MIDDLE_PIP);
-    const ringFold = isFingerFolded(lm, RING_TIP, RING_MCP);
-    const pinkyFold = isFingerFolded(lm, PINKY_TIP, PINKY_MCP);
-    
-    // Middle finger crosses over index finger (using robust dot product check)
-    const crossed = isFingersCrossed(lm);
-                    
-    return indexExt && middleExt && ringFold && pinkyFold && crossed;
-  };
-
-  // Symmetrical: both hands must cross their middle over index fingers
-  if (checkHandCrossed(hands[0]) && checkHandCrossed(hands[1])) {
+  // Must NOT face the camera (back of hand faces camera)
+  if (isPalmFacingCamera(lm, handedness)) return 0.0;
+  
+  const indexExtended = isFingerExtended(lm, INDEX_TIP, INDEX_PIP);
+  const pinkyExtended = isFingerExtended(lm, PINKY_TIP, PINKY_PIP);
+  const middleFolded  = isFingerFolded(lm, MIDDLE_TIP, MIDDLE_MCP);
+  const ringFolded    = isFingerFolded(lm, RING_TIP, RING_MCP);
+  
+  if (indexExtended && pinkyExtended && middleFolded && ringFolded) {
     return 1.0;
   }
   return 0.0;
@@ -249,21 +230,6 @@ function detectHollowPurple(hands) {
   return (pinching && middleFolded && ringFolded && pinkyFolded) ? 1.0 : 0.0;
 }
 
-/**
- * 🐺 WOLVERINE CLAWS — Knuckle Fist (facing camera)
- * All fingers folded down tightly, wrist is horizontal
- */
-function detectWolverine(hands) {
-  const lm = hands[0];
-  const index  = isFingerFolded(lm, INDEX_TIP, INDEX_MCP);
-  const middle = isFingerFolded(lm, MIDDLE_TIP, MIDDLE_MCP);
-  const ring   = isFingerFolded(lm, RING_TIP, RING_MCP);
-  const pinky  = isFingerFolded(lm, PINKY_TIP, PINKY_MCP);
-  // Knuckles (MCPs) should be roughly horizontal — visible and spread
-  const knuckleSpread = Math.abs(lm[INDEX_MCP].x - lm[PINKY_MCP].x) > 0.1;
-  // Make sure it's NOT Chidori (overlap): Wolverine needs knuckle spread
-  return (index && middle && ring && pinky && knuckleSpread) ? 1.0 : 0.0;
-}
 
 // ─── Registry ────────────────────────────────────────────────────────
 
@@ -327,13 +293,13 @@ export const GESTURE_REGISTRY = [
     series: 'JJK · Gojo Satoru',
     icon: '🔮',
     color: '#00f0ff',
-    poseType: 'crossed',
-    tip: '💡 Double Crossed fingers: Cross the middle finger OVER the index finger on BOTH hands simultaneously.',
+    poseType: 'horns-back',
+    tip: '💡 Raise your hand with the index and pinky fingers pointing up, and middle/ring fingers folded. The back of your hand MUST face the camera.',
     manualSteps: [
-      'Raise BOTH hands toward the camera.',
-      'Extend the INDEX and MIDDLE fingers on both hands.',
-      'Cross the MIDDLE finger over the INDEX finger on both hands.',
-      'Fold the ring and pinky fingers on both hands into your palms.',
+      'Raise a single hand toward the camera.',
+      'Extend only your INDEX and PINKY fingers straight up.',
+      'Fold your MIDDLE and RING fingers down into your palm.',
+      'Turn your hand so the BACK OF YOUR HAND faces the camera (palm facing you).',
     ],
   },
   {
@@ -354,39 +320,7 @@ export const GESTURE_REGISTRY = [
       'Hold the two-handed mudra steady to cast the domain!',
     ],
   },
-  {
-    id: 'katon',
-    detect: detectKaton,
-    label: 'Katon: Great Fireball',
-    series: 'Naruto · Uchiha Madara',
-    icon: '🔥',
-    color: '#ff6b00',
-    poseType: 'tiger',
-    tip: '💡 Point only your index and middle fingers together upward. Keep them together, not spread like a "V".',
-    manualSteps: [
-      'Raise your hand toward the camera.',
-      'Extend your INDEX and MIDDLE fingers straight upward together.',
-      'Keep them close side by side (not spread apart).',
-      'Fold your RING and PINKY fingers into your palm.',
-      'Hold steady — the fire will erupt from your fingertips!',
-    ],
-  },
-  {
-    id: 'wolverine',
-    detect: detectWolverine,
-    label: 'Adamantium Claws',
-    series: 'Marvel · Wolverine',
-    icon: '🐺',
-    color: '#c0c0c0',
-    poseType: 'fist-knuckle',
-    tip: '💡 Make a tight fist with your knuckles facing the camera. Keep your hand horizontal and show all four knuckles clearly.',
-    manualSteps: [
-      'Make a solid tight fist with your hand.',
-      'Rotate your fist so the KNUCKLES face directly toward the camera.',
-      'Keep your hand horizontal — all 4 knuckles visible.',
-      'Hold firm — adamantium blades will extend from each knuckle!',
-    ],
-  },
+
   {
     id: 'chidori',
     detect: detectChidori,

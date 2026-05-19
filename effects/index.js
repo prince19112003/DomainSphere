@@ -5,22 +5,18 @@
 
 import { createRasengan }     from './rasengan.js';
 import { createChidori }      from './chidori.js';
-import { createKaton }        from './katon.js';
 import { createGojoDomain }   from './gojoDomain.js';
 import { createSukunaDomain } from './sukunaDomain.js';
 import { createHollowPurple } from './hollowPurple.js';
-import { createWolverine }    from './wolverine.js';
 import { createHeartDomain }  from './heartDomain.js';
 import { createTeleport }     from './teleport.js';
 
 const EFFECT_FACTORIES = {
   rasengan:  createRasengan,
   chidori:   createChidori,
-  katon:     createKaton,
   gojo:      createGojoDomain,
   sukuna:    createSukunaDomain,
   hollow:    createHollowPurple,
-  wolverine: createWolverine,
   heart:     createHeartDomain,
   teleport:  createTeleport,
 };
