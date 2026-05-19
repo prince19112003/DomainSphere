@@ -19,15 +19,11 @@ anime-gesture-jutsu/
 │   ├── 📄 index.js           # Scene manager, resize coordinate system, shader pre-warming.
 │   ├── 📄 rasengan.js        # Rasengan blue/white swirling particle sphere.
 │   ├── 📄 chidori.js         # Chidori lightning strikes and blue electrical sparks.
-│   ├── 📄 katon.js           # Katon Fire Style fireballs and flames.
 │   ├── 📄 gojoDomain.js      # Infinite Void domain space/cosmos panels.
 │   ├── 📄 sukunaDomain.js    # Malevolent Shrine bone structure domain overlay.
 │   ├── 📄 hollowPurple.js    # Hollow Purple massive cosmic red/blue energy ball.
-│   ├── 📄 wolverine.js       # Adamantium claws extending from hand knuckles.
 │   ├── 📄 heartDomain.js     # Heart seal particle effect.
-│   ├── 📄 teleport.js        # Shunshin speed/teleport smoke puffs.
-│   ├── 📄 infiniteVoid.js    # Secondary Gojo domain setup (reference).
-│   └── 📄 malevolentShrine.js# Secondary Sukuna domain setup (reference).
+│   └── 📄 teleport.js        # Shunshin speed/teleport smoke puffs.
 │
 └── 📄 Launch_Jutsu.bat       # Local development server startup batch script.
 ```
@@ -81,7 +77,7 @@ anime-gesture-jutsu/
   * **Pre-warm Timing:** Modify the `preWarmShaders()` timeout to adjust background compilation timing.
 
 ### 7. `effects/[jutsu_name].js`
-* **What it does:** Individual files (e.g., `chidori.js`, `rasengan.js`, `katon.js`) implementing particle, mesh, and shader layouts for each jutsu.
+* **What it does:** Individual files (e.g., `chidori.js`, `rasengan.js`) implementing particle, mesh, and shader layouts for each jutsu.
 * **If you change these files, what changes in the app:**
   * **Particle Count:** Adjust loops (e.g. `particleCount = 500`) to increase particle density (looks richer) or decrease it (runs faster on low-end devices).
   * **Visual Velocities:** Modify translation or rotational update steps (e.g., `positions[i] += velocity`) to make fire rise faster, sparks fly wilder, or orbits spin tighter.

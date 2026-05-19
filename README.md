@@ -35,11 +35,9 @@ It is designed with a premium, sleek **Obsidian Black & Neon Shadow** cyberpunk 
 | **💖 Heart Sanctuary** | **Dual Hand Heart:** Form a heart shape using BOTH hands (thumbs touching and index fingers touching), wrists slightly separated | Pulsing 3D particle heart structure, swirling pink orbital rings, and warm rising sparkles | Rhythmic dual sub-bass heartbeat thumps (`55Hz` & `50Hz`) & high chimes |
 | **🌀 Rasengan** | Flat, wide open palm facing the camera | Roaring double-torus wind vortex sphere with ambient blue orbital rings | Swirling white noise wind generator with frequency modulations |
 | **⚡ Chidori** | Closed fist facing the camera | Violent electrical particle field with branching lightning arcs | High-frequency sweep with metal crackle noise |
-| **🔥 Katon Fireball** | Point index and middle fingers together upward (Tiger Mudra) | Expanding sphere of fire embers, heat distortion aura, and solar flares | Low-pass filtered rumble & crackling flames |
-| **🔮 Infinite Void** | **Double Crossed Fingers:** Cross the middle finger over the index finger on BOTH hands simultaneously | Cosmic starfield background, expanding deep-blue rings, and stardust clusters | Echoing cosmic sweeps and detuned phase modulators |
+| **🔮 Infinite Void** | **Horns (Back Faced):** Extend index and pinky fingers, fold middle and ring, with back of hand facing camera | Cosmic starfield background, expanding deep-blue rings, and stardust clusters | Echoing cosmic sweeps and detuned phase modulators |
 | **💀 Malevolent Shrine** | **Enmaten Mudra (Dual):** Bring BOTH hands together, palms inclined facing each other, wrists close, fingers pointing straight up (NOT crossed) | Blood-red domain fog, expanding crimson circles, and flying ash embers | Eerie low-frequency drone pad |
 | **🟣 Hollow Purple** | Pinch thumb and index tips together, rest folded | Colliding red & blue energy spheres merging into an intense purple blast | Sparking blue/red dual tones colliding into a massive discharge |
-| **🐺 Adamantium Claws** | Tight closed fist with knuckles spread horizontal (Wolverine style) | 3 Adamantium claw blades sliding out from knuckles with sparks | Metallic *SNIKT!* sound sweep with high-pass friction |
 
 ---
 

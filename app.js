@@ -871,37 +871,10 @@ function drawPoseDiagram(canvas, poseType) {
     ctx.font = 'bold 9px Outfit, sans-serif';
     ctx.fillText('⚡ CLOSED FIST', CX, CY + 18);
   }
-  else if (poseType === 'fist-knuckle') {
-    // Wolverine adamantium claws extending out from knuckles
-    ctx.strokeStyle = 'rgba(200, 220, 255, 0.85)';
-    ctx.lineWidth = 2.5;
-    const clawRootsX = [CX - 24, CX, CX + 24];
-    clawRootsX.forEach(rx => {
-      ctx.beginPath();
-      ctx.moveTo(rx, CY - 20);
-      ctx.lineTo(rx, CY - 85);
-      ctx.stroke();
-    });
-    
-    ctx.fillStyle = '#00f0ff';
-    ctx.font = 'bold 9px Outfit, sans-serif';
-    ctx.fillText('🐺 STEEL CLAWS', CX, CY + 18);
-  }
-  else if (poseType === 'tiger') {
-    // Fire flames at the tips of Index + Middle
-    ctx.fillStyle = 'rgba(255, 68, 0, 0.7)';
-    ctx.beginPath();
-    ctx.moveTo(CX - 8, CY - 92); ctx.quadraticCurveTo(CX - 15, CY - 105, CX - 3, CY - 118); ctx.quadraticCurveTo(CX + 8, CY - 105, CX + 3, CY - 92);
-    ctx.fill();
-    
-    ctx.fillStyle = '#ffb300';
-    ctx.font = 'bold 9px Outfit, sans-serif';
-    ctx.fillText('🔥 TIGER SEAL', CX, CY + 18);
-  }
-  else if (poseType === 'crossed') {
+  else if (poseType === 'horns-back') {
     ctx.fillStyle = '#00ff66';
     ctx.font = 'bold 9px Outfit, sans-serif';
-    ctx.fillText('🔮 CROSSED SEAL', CX, CY + 18);
+    ctx.fillText('🔮 HORNS (BACK-FACED)', CX, CY + 18);
   }
   else if (poseType === 'claw') {
     // Sukuna Demon Claw slash marks

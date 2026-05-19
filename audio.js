@@ -219,36 +219,6 @@ audioEngines.hollow = {
   },
 };
 
-/** 🐺 Wolverine — metallic SNIKT sweep */
-audioEngines.wolverine = {
-  nodes: [],
-  sniked: false,
-  start() {
-    if (!ctx || !enabled) return;
-    this.sniked = false;
-    const hum = osc('sawtooth', 160, 0.04);
-    const metalNoise = noise(0.15, 'highpass', 4000, 5);
-    this.nodes = [hum, metalNoise];
-  },
-  update(charge) {
-    if (charge > 0.85 && !this.sniked) {
-      this.sniked = true;
-      // SNIKT! — fast high-pitched metal sweep
-      if (!ctx || !enabled) return;
-      const snikt = ctx.createOscillator();
-      snikt.type = 'sawtooth'; snikt.frequency.value = 3000;
-      const sniktGain = ctx.createGain();
-      sniktGain.gain.setValueAtTime(0.55, ctx.currentTime);
-      sniktGain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.18);
-      snikt.frequency.exponentialRampToValueAtTime(400, ctx.currentTime + 0.18);
-      snikt.connect(sniktGain); sniktGain.connect(masterGain);
-      snikt.start(); snikt.stop(ctx.currentTime + 0.2);
-      activeNodes.push(snikt);
-    }
-    if (this.nodes[1] && this.nodes[1].gain) this.nodes[1].gain.gain.value = charge * 0.3;
-  },
-  stop() { this.sniked = false; },
-};
 
 /** 💖 Heart Sanctuary — rhythmic dual heartbeat + romantic chime pads */
 audioEngines.heart = {
