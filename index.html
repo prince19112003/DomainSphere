@@ -273,7 +273,8 @@
       <div class="topbar-controls">
         <button id="fullscreen-btn" class="ctrl-btn" title="Toggle Fullscreen" aria-label="Toggle Fullscreen">⛶ FULLSCREEN</button>
         <button id="screenshot-btn" class="ctrl-btn" title="Snap Jutsu Screenshot" aria-label="Snap Jutsu Screenshot">📸 SNAP JUTSU</button>
-        <button id="stop-btn" class="ctrl-btn ctrl-btn--danger" title="Deactivate" aria-label="Deactivate Chakra Sync">⏹ DEACTIVATE</button>
+        <button id="camera-toggle-btn" class="ctrl-btn ctrl-btn--danger" title="Toggle Camera Feed" aria-label="Toggle Camera Feed">📷 CAMERA OFF</button>
+        <button id="exit-btn" class="ctrl-btn" title="Exit Interface" aria-label="Exit to Lobby">🚪 EXIT SYSTEM</button>
       </div>
     </header>
 
@@ -332,6 +333,13 @@
             <div class="reticle-corner rc-br"></div>
             <div class="reticle-label" id="reticle-label">SCANNING...</div>
           </div>
+          <!-- Camera offline overlay placeholder -->
+          <div class="camera-offline-overlay absolute inset-0 flex flex-col items-center justify-center gap-4 bg-deepBlack/95 z-30" id="camera-offline-overlay" style="display: none;">
+            <span class="text-4xl animate-pulse select-none">📷</span>
+            <span class="text-sm font-mono text-[#ff1744] tracking-widest uppercase">Chakra Sensors Offline</span>
+            <button id="camera-resume-btn" class="px-6 py-2.5 border border-[#ff1744]/40 text-xs font-mono text-white bg-deepBlack/80 hover:bg-[#ff1744]/10 transition-all font-bold tracking-wider">[ INITIALIZE SENSORS ]</button>
+          </div>
+
           <!-- Idle overlay when no hand detected -->
           <div class="no-hand-overlay" id="no-hand-overlay" role="status">
             <div class="nho-icon">🖐</div>
@@ -456,6 +464,10 @@
           <input type="color" id="chakra-color-picker" value="#00f0ff" title="Pick chakra color" aria-label="Chakra color picker" />
           <label for="chakra-color-picker">Aura Color</label>
         </div>
+        <div class="color-picker-row mt-12">
+          <input type="range" id="person-scale-slider" min="0.4" max="1.0" step="0.05" value="0.6" title="Scale camera person" style="width: 80px; accent-color: var(--cyan); background: rgba(255,255,255,0.1); border: none; height: 6px; border-radius: 3px; cursor: pointer;" />
+          <label for="person-scale-slider">Person Scale</label>
+        </div>
         <div class="toggle-row">
           <label class="toggle-label" for="skeleton-toggle">Show Skeleton</label>
           <input type="checkbox" id="skeleton-toggle" checked aria-label="Toggle hand skeleton overlay" />
@@ -518,6 +530,18 @@
 
   <!-- Hidden segmentation composite canvas (person-over-black) -->
   <canvas id="seg-canvas" style="display:none;"></canvas>
+
+  <!-- Black hole transition overlay with white air vortex -->
+  <div id="blackhole-overlay">
+    <svg class="vortex-svg" viewBox="0 0 100 100">
+      <path d="M 50 50 Q 55 30, 70 20 T 90 10" />
+      <path d="M 50 50 Q 70 55, 80 70 T 90 90" />
+      <path d="M 50 50 Q 45 70, 30 80 T 10 90" />
+      <path d="M 50 50 Q 30 45, 20 30 T 10 10" />
+      <path d="M 50 50 Q 60 40, 50 10 T 50 0" />
+      <path d="M 50 50 Q 40 60, 50 90 T 50 100" />
+    </svg>
+  </div>
 
   <!-- App modules -->
   <script type="module" src="app.js"></script>

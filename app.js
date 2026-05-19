@@ -20,9 +20,13 @@ let animRunning = false;
 let segCanvas = null;  // BG-removal compositing canvas (module-level for onHandResults access)
 
 let currentGesture = null;
+let pendingGesture = null;
+let pendingGestureFrames = 0;
+const GESTURE_CONFIDENCE_FRAMES = 5;
 let chakraColor = '#00f0ff';
 let showSkeleton = true;
 let soundEnabled = true;
+let cameraActive = true;
 
 let lastTime = performance.now();
 let frameCount = 0;
@@ -32,6 +36,7 @@ let totalParticles = 0;
 
 // FPS smoother
 let fpsSmooth = 60;
+let resizeCanvasesFn = null;
 
 // ─── DOM references ──────────────────────────────────────────────────
 const $ = id => document.getElementById(id);
@@ -129,7 +134,26 @@ const $ = id => document.getElementById(id);
 $('init-btn').addEventListener('click', async () => {
   initAudio();
   playUiTick();
+  
+  // Trigger Black Hole transition
+  document.body.classList.add('blackhole-suck-active');
+  const overlay = $('blackhole-overlay');
+  if (overlay) overlay.classList.add('active');
+  
+  // Wait 2.0s for the black hole collapse animation to swallow the screen
+  await new Promise(resolve => setTimeout(resolve, 2000));
+  
+  // Start system (switches screen class hidden states)
   await startSystem();
+  
+  // Trigger fade out of black hole overlay to reveal webcam screen
+  if (overlay) {
+    overlay.classList.add('blackhole-fadeout');
+    // Wait for fadeout animation to complete (500ms) before clean-up
+    await new Promise(resolve => setTimeout(resolve, 500));
+    overlay.classList.remove('active', 'blackhole-fadeout');
+  }
+  document.body.classList.remove('blackhole-suck-active');
 });
 
 async function startSystem() {
@@ -151,6 +175,7 @@ async function startSystem() {
     if (engine) engine.resize(w, h);
   }
   resizeCanvases();
+  resizeCanvasesFn = resizeCanvases;
   window.addEventListener('resize', resizeCanvases);
 
   trackingCtx = trackingCanvas.getContext('2d');
@@ -327,14 +352,21 @@ function onHandResults(results) {
     const W = trackingCanvas.width, H = trackingCanvas.height;
     trackingCtx.clearRect(0, 0, W, H);
 
-    // Draw mirrored frame — use BG-removed composite if segmentation is active, else raw video
+    const personScaleSlider = $('person-scale-slider');
+    const personScale = personScaleSlider ? parseFloat(personScaleSlider.value) : 1.0;
+
+    // Draw mirrored and scaled frame centered
     trackingCtx.save();
     trackingCtx.scale(-1, 1);
     const drawSource = (typeof segCanvas !== 'undefined' && segCanvas && segCanvas.width > 0)
       ? segCanvas
       : results.image;
     if (drawSource) {
-      trackingCtx.drawImage(drawSource, -W, 0, W, H);
+      const scaleWidth = W * personScale;
+      const scaleHeight = H * personScale;
+      const x = (W - scaleWidth) / 2;
+      const y = (H - scaleHeight) / 2;
+      trackingCtx.drawImage(drawSource, -W + x, y, scaleWidth, scaleHeight);
     }
     trackingCtx.restore();
 
@@ -342,6 +374,8 @@ function onHandResults(results) {
     if (!results.multiHandLandmarks || results.multiHandLandmarks.length === 0) {
       $('no-hand-overlay').style.display = '';
       $('reticle').classList.remove('visible');
+      pendingGesture = null;
+      pendingGestureFrames = 0;
       if (currentGesture) {
         stopGestureAudio();
         engine.deactivateEffect();
@@ -351,18 +385,28 @@ function onHandResults(results) {
       }
       $('charge-bar').style.width = '0%';
       $('charge-pct').textContent = '0%';
+      updateVibration(null);
       return;
     }
 
     $('no-hand-overlay').style.display = 'none';
 
     const multiHands = results.multiHandLandmarks;
-    const lm = multiHands[0];
+    
+    // Scale landmarks for rendering coordinates
+    const renderMultiHands = multiHands.map(hand => {
+      return hand.map(lm => ({
+        x: (1 - personScale) / 2 + lm.x * personScale,
+        y: (1 - personScale) / 2 + lm.y * personScale,
+        z: lm.z * personScale
+      }));
+    });
+    const lm = renderMultiHands[0];
     
     // Get center point (average of both hands if 2 are detected, else 1)
     let palmCenter = getPalmCenter(lm);
     if (multiHands.length > 1) {
-      const palm2 = getPalmCenter(multiHands[1]);
+      const palm2 = getPalmCenter(renderMultiHands[1]);
       palmCenter = {
         x: (palmCenter.x + palm2.x) / 2,
         y: (palmCenter.y + palm2.y) / 2,
@@ -380,36 +424,59 @@ function onHandResults(results) {
 
     // Draw skeleton if enabled (draw for all detected hands)
     if (showSkeleton) {
-      multiHands.forEach(handLm => drawSkeleton(handLm, W, H));
+      renderMultiHands.forEach(handLm => drawSkeleton(handLm, W, H));
     }
 
-    // Classify gesture using ALL hands
-    const gesture = classifyGesture(multiHands);
+    // Classify gesture using ALL hands (use raw landmarks for 100% accurate classification)
+    const gesture = classifyGesture(multiHands, results.multiHandedness);
 
     if (gesture) {
       const charge = gesture.charge;
-      $('charge-bar').style.width = `${Math.round(charge*100)}%`;
-      $('charge-bar').style.background = `linear-gradient(90deg, ${gesture.color}, ${chakraColor})`;
-      $('charge-pct').textContent = `${Math.round(charge*100)}%`;
-      $('reticle-label').textContent = gesture.label.toUpperCase();
+      
+      // DEBOUNCE LOGIC
+      if (pendingGesture?.id !== gesture.id) {
+        pendingGesture = gesture;
+        pendingGestureFrames = 1;
+      } else {
+        pendingGestureFrames++;
+      }
 
-      if (currentGesture?.id !== gesture.id) {
-        // New gesture detected
-        stopGestureAudio();
+      if (pendingGestureFrames >= GESTURE_CONFIDENCE_FRAMES && currentGesture?.id !== gesture.id) {
+        // New stable gesture confirmed
+        if (currentGesture) {
+          stopGestureAudio();
+          engine.deactivateEffect();
+        }
         engine.activateEffect(gesture.id);
         startGestureAudio(gesture.id);
         currentGesture = gesture;
         updateJutsuBanner(gesture);
         updateCodexStatus(gesture.id);
-        log(`[MUDRA] ${gesture.icon} ${gesture.label} detected!`, 'warn');
+        log(`[MUDRA] ${gesture.icon} ${gesture.label} locked in!`, 'success');
         if (charge === 1.0) log(`[CHAKRA] 100% — ${gesture.label} unleashed!`, 'danger');
       }
 
-      // Update position and charge
-      engine.setHandPosition(palmCenter.x, palmCenter.y);
-      engine.updateEffect(charge);
-      updateGestureAudio(gesture.id, charge);
+      // If gesture is confirmed, run full HUD
+      if (currentGesture?.id === gesture.id) {
+        $('charge-bar').style.width = `${Math.round(charge*100)}%`;
+        $('charge-bar').style.background = `linear-gradient(90deg, ${gesture.color}, ${chakraColor})`;
+        $('charge-pct').textContent = `${Math.round(charge*100)}%`;
+        $('reticle-label').textContent = gesture.label.toUpperCase();
+
+        // Update position and charge
+        engine.setHandPosition(palmCenter.x, palmCenter.y, personScale);
+        engine.updateEffect(charge);
+        updateGestureAudio(gesture.id, charge);
+        
+        updateVibration(gesture.id);
+      } else {
+        // Still analyzing
+        $('reticle-label').textContent = `ANALYZING...`;
+        updateVibration(null);
+      }
     } else {
+      pendingGesture = null;
+      pendingGestureFrames = 0;
       if (currentGesture) {
         stopGestureAudio();
         engine.deactivateEffect();
@@ -420,10 +487,27 @@ function onHandResults(results) {
       $('charge-bar').style.width = '0%';
       $('charge-pct').textContent = '0%';
       $('reticle-label').textContent = 'SCANNING...';
+      updateVibration(null);
     }
   } catch (err) {
     console.error("Error in onHandResults:", err);
     log(`[ERROR] Gesture pipeline crash: ${err.message}`, 'danger');
+  }
+}
+
+// ─── Vibration Handler ───────────────────────────────────────────────
+function updateVibration(gestureId) {
+  const hud = $('hud-screen');
+  if (gestureId === 'sukuna') {
+    if (hud && !hud.classList.contains('sukuna-vibrate')) {
+      hud.classList.add('sukuna-vibrate');
+    }
+    if (navigator.vibrate) {
+      navigator.vibrate([100, 50, 100]);
+    }
+  } else {
+    if (hud) hud.classList.remove('sukuna-vibrate');
+    if (navigator.vibrate) navigator.vibrate(0);
   }
 }
 
@@ -896,25 +980,84 @@ $('fullscreen-btn').addEventListener('click', () => {
   if (!document.fullscreenElement) {
     document.documentElement.requestFullscreen().catch(err => log(`[SYSTEM] Fullscreen error: ${err.message}`, 'warn'));
     $('fullscreen-btn').textContent = '⛶ EXIT FULL';
+    $('hud-screen').classList.add('zen-mode');
   } else {
     document.exitFullscreen();
     $('fullscreen-btn').textContent = '⛶ FULLSCREEN';
+    $('hud-screen').classList.remove('zen-mode');
   }
+  if (resizeCanvasesFn) setTimeout(resizeCanvasesFn, 100);
 });
 
 document.addEventListener('fullscreenchange', () => {
-  if (!document.fullscreenElement) $('fullscreen-btn').textContent = '⛶ FULLSCREEN';
+  if (!document.fullscreenElement) {
+    $('fullscreen-btn').textContent = '⛶ FULLSCREEN';
+    $('hud-screen').classList.remove('zen-mode');
+  } else {
+    $('fullscreen-btn').textContent = '⛶ EXIT FULL';
+    $('hud-screen').classList.add('zen-mode');
+  }
+  if (resizeCanvasesFn) setTimeout(resizeCanvasesFn, 100);
 });
 
-// Stop / Deactivate
-$('stop-btn').addEventListener('click', () => {
+// Toggle Camera state (remain in interface)
+async function toggleCameraState() {
+  if (cameraActive) {
+    cameraActive = false;
+    stopGestureAudio();
+    if (engine) engine.deactivateEffect();
+    if (camera) {
+      try {
+        camera.stop();
+      } catch(err) {
+        log(`[SYSTEM] Camera stop error: ${err.message}`, 'warn');
+      }
+    }
+    $('camera-offline-overlay').style.display = 'flex';
+    $('camera-toggle-btn').textContent = '📷 CAMERA ON';
+    $('camera-toggle-btn').classList.remove('ctrl-btn--danger');
+    $('camera-toggle-btn').classList.add('ctrl-btn--success');
+    log('[SYSTEM] Camera sensors deactivated. Console workspace active.', 'warn');
+  } else {
+    cameraActive = true;
+    $('camera-offline-overlay').style.display = 'none';
+    $('camera-toggle-btn').textContent = '📷 CAMERA OFF';
+    $('camera-toggle-btn').classList.add('ctrl-btn--danger');
+    $('camera-toggle-btn').classList.remove('ctrl-btn--success');
+    log('[SYSTEM] Initializing camera sensors...', 'system');
+    if (camera) {
+      try {
+        await camera.start();
+      } catch(err) {
+        log(`[SYSTEM] Camera start error: ${err.message}`, 'danger');
+      }
+    }
+  }
+}
+
+$('camera-toggle-btn').addEventListener('click', toggleCameraState);
+$('camera-resume-btn').addEventListener('click', toggleCameraState);
+
+// Exit to Lobby / Disconnect Session
+$('exit-btn').addEventListener('click', () => {
   stopGestureAudio();
   if (engine) engine.deactivateEffect();
-  if (camera) camera.stop();
+  if (camera) {
+    try {
+      camera.stop();
+    } catch(err) {}
+  }
   $('landing-screen').classList.remove('hidden');
   $('hud-screen').classList.add('hidden');
   currentGesture = null;
   animRunning = false;
+  
+  // Clean up camera offline state for next session
+  $('camera-offline-overlay').style.display = 'none';
+  $('camera-toggle-btn').textContent = '📷 CAMERA OFF';
+  $('camera-toggle-btn').classList.add('ctrl-btn--danger');
+  $('camera-toggle-btn').classList.remove('ctrl-btn--success');
+  cameraActive = true;
 });
 
 // Chakra color

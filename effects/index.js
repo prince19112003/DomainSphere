@@ -37,6 +37,7 @@ export class EffectsEngine {
     this.effectCache = {}; // cache instantiated effects for performance
     this.startTime = performance.now();
     this.onParticleCount = null; // callback(count)
+    this.personScale = 1.0;
     this._init();
   }
 
@@ -65,6 +66,28 @@ export class EffectsEngine {
     this.scene.add(pt);
 
     this._animate();
+    // Warm up shaders to prevent lag on first gesture activation
+    setTimeout(() => this.preWarmShaders(), 100);
+  }
+
+  preWarmShaders() {
+    // Pre-instantiate all effects
+    for (const id in EFFECT_FACTORIES) {
+      if (!this.effectCache[id]) {
+        this.effectCache[id] = EFFECT_FACTORIES[id](this.THREE);
+        this.effectCache[id].group.visible = false;
+        this.scene.add(this.effectCache[id].group);
+      }
+    }
+    
+    // Force WebGL to compile shaders immediately
+    this.renderer.compile(this.scene, this.camera);
+    
+    // Remove from scene until actually activated
+    for (const id in this.effectCache) {
+      this.scene.remove(this.effectCache[id].group);
+      this.effectCache[id].group.visible = true;
+    }
   }
 
   resize(w, h) {
@@ -74,7 +97,8 @@ export class EffectsEngine {
   }
 
   /** Place active effect group at normalized hand position (0-1 coords → world coords) */
-  setHandPosition(nx, ny) {
+  setHandPosition(nx, ny, personScale = 1.0) {
+    this.personScale = personScale;
     if (!this.activeEffect) return;
     // Convert normalized coords to world space
     const aspect = this.camera.aspect;
@@ -118,6 +142,12 @@ export class EffectsEngine {
     if (!this.activeEffect) return;
     const time = performance.now() - this.startTime;
     this.activeEffect.update(time, charge);
+    
+    // Scale the entire 3D effect group to match the person scale
+    if (this.personScale !== 1.0) {
+      this.activeEffect.group.scale.multiplyScalar(this.personScale);
+    }
+
     if (this.onParticleCount && this.activeEffect.getParticleCount) {
       this.onParticleCount(this.activeEffect.getParticleCount());
     }

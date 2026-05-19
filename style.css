@@ -621,4 +621,131 @@
   92% { opacity: 0.75; transform: scale(0.97) rotate(-2deg); }
 }
 
+/* Black Hole Switch Transition Overlay */
+#blackhole-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  pointer-events: none;
+  display: none;
+  background: rgba(2, 2, 4, 0.95);
+  align-items: center;
+  justify-content: center;
+}
+#blackhole-overlay.active {
+  display: flex;
+}
+.vortex-svg {
+  position: absolute;
+  width: 500px;
+  height: 500px;
+  max-width: 90vw;
+  max-height: 90vw;
+  animation: vortexSuckIn 2.0s cubic-bezier(0.15, 0.85, 0.35, 1) forwards;
+}
+.vortex-svg path {
+  stroke: rgba(255, 255, 255, 0.9);
+  stroke-width: 1.5;
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-dasharray: 40 60;
+  animation: dashAir 1.5s linear infinite;
+}
+@keyframes dashAir {
+  from { stroke-dashoffset: 100; }
+  to { stroke-dashoffset: 0; }
+}
+@keyframes vortexSuckIn {
+  0% {
+    transform: scale(2.2) rotate(0deg);
+    opacity: 0;
+    filter: blur(1px);
+  }
+  15% {
+    opacity: 1;
+    filter: blur(0px);
+  }
+  90% {
+    opacity: 0.9;
+  }
+  100% {
+    transform: scale(0.01) rotate(720deg);
+    opacity: 0;
+    filter: blur(4px);
+  }
+}
+
+
+/* Landing spiral suck effect (Vacuum Style) */
+.blackhole-suck-active #landing-screen {
+  animation: vacuumClipping 2.0s cubic-bezier(0.15, 0.85, 0.35, 1) forwards;
+}
+@keyframes vacuumClipping {
+  0% {
+    clip-path: circle(150% at 50% 50%);
+    filter: grayscale(0) contrast(1) blur(0px);
+  }
+  35% {
+    filter: grayscale(0.6) contrast(1.3) blur(2px);
+  }
+  80% {
+    filter: grayscale(1) contrast(1.8) blur(6px);
+  }
+  100% {
+    clip-path: circle(0% at 50% 50%);
+    filter: grayscale(1) contrast(2) blur(15px);
+  }
+}
+
+.blackhole-suck-active .lobby-container {
+  animation: vacuumScale 2.0s cubic-bezier(0.15, 0.85, 0.35, 1) forwards;
+}
+@keyframes vacuumScale {
+  0% {
+    transform: scale(1) rotate(0deg);
+    opacity: 1;
+  }
+  40% {
+    opacity: 0.8;
+  }
+  100% {
+    transform: scale(0.01) rotate(360deg);
+    opacity: 0;
+  }
+}
+
+/* Fade out after transition */
+.blackhole-fadeout {
+  animation: blackholeFadeOut 0.6s ease-out forwards !important;
+}
+@keyframes blackholeFadeOut {
+  0% { opacity: 1; display: block !important; }
+  100% { opacity: 0; display: none !important; }
+}
+
+/* Immersive Zen/Fullscreen Mode */
+.zen-mode .sidebar {
+  display: none !important;
+}
+
+/* Sukuna Domain screen-vibration effect */
+.sukuna-vibrate {
+  animation: screenShake 0.1s infinite;
+}
+
+@keyframes screenShake {
+  0%, 100% { transform: translate(0, 0) rotate(0deg); }
+  10% { transform: translate(-2px, -1px) rotate(-0.5deg); }
+  20% { transform: translate(-3px, 0px) rotate(0.5deg); }
+  30% { transform: translate(0px, 2px) rotate(0deg); }
+  40% { transform: translate(1px, -1px) rotate(0.5deg); }
+  50% { transform: translate(-1px, 2px) rotate(-0.5deg); }
+  60% { transform: translate(-2px, 1px) rotate(0deg); }
+  70% { transform: translate(2px, 1px) rotate(-0.5deg); }
+  80% { transform: translate(-1px, -1px) rotate(0.5deg); }
+  90% { transform: translate(2px, 2px) rotate(0deg); }
+}
+
+
 

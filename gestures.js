@@ -52,12 +52,31 @@ function isFingersCrossed(lm) {
 
 // ─── Gesture Detector Functions ─────────────────────────────────────
 
+/** Returns true if the palm is facing towards the camera (using 2D knuckle winding order) */
+function isPalmFacingCamera(lm, handedness) {
+  const v1x = lm[INDEX_MCP].x - lm[WRIST].x;
+  const v1y = lm[INDEX_MCP].y - lm[WRIST].y;
+  const v2x = lm[PINKY_MCP].x - lm[WRIST].x;
+  const v2y = lm[PINKY_MCP].y - lm[WRIST].y;
+  const nz = v1x * v2y - v1y * v2x;
+  
+  if (handedness === 'Right') {
+    return nz > 0.015;
+  } else {
+    return nz < -0.015;
+  }
+}
+
 /**
  * 🌀 RASENGAN — Open Palm
- * All 5 fingers fully extended, hand facing camera
+ * All 5 fingers fully extended, hand facing camera (palm facing camera only)
  */
-function detectRasengan(hands) {
+function detectRasengan(hands, handednessList = []) {
   const lm = hands[0];
+  const handedness = (handednessList && handednessList[0]) ? handednessList[0].label : 'Right';
+  
+  if (!isPalmFacingCamera(lm, handedness)) return 0.0;
+  
   const thumb = lm[THUMB_TIP].x < lm[THUMB_MCP].x - 0.03 || lm[THUMB_TIP].x > lm[THUMB_MCP].x + 0.03;
   const index  = isFingerExtended(lm, INDEX_TIP, INDEX_PIP);
   const middle = isFingerExtended(lm, MIDDLE_TIP, MIDDLE_PIP);
@@ -127,6 +146,7 @@ function detectGojoDomain(hands) {
 /**
  * 💀 SUKUNA DOMAIN — Enmaten Mudra (Two hands inclined together)
  * Both hands must be present, palms facing each other, fingers pointing up, and NOT crossed.
+ * Ring and pinky fingers must be extended (not folded as in Heart or Fists).
  */
 function detectSukunaDomain(hands) {
   if (hands.length < 2) return 0.0;
@@ -145,9 +165,13 @@ function detectSukunaDomain(hands) {
   // Verify fingers are NOT crossed to prevent collision with Gojo's gesture
   const h1_crossed = isFingersCrossed(lm1);
   const h2_crossed = isFingersCrossed(lm2);
+
+  // In Enmaten Mudra, ring and pinky fingers are straight and not folded into palm
+  const h1_not_folded = !isFingerFolded(lm1, RING_TIP, RING_MCP) && !isFingerFolded(lm1, PINKY_TIP, PINKY_MCP);
+  const h2_not_folded = !isFingerFolded(lm2, RING_TIP, RING_MCP) && !isFingerFolded(lm2, PINKY_TIP, PINKY_MCP);
   
   // In Enmaten Mudra, wrists are close, index/middle tips are touching or close, palms inclined
-  if (h1_up && h2_up && !h1_crossed && !h2_crossed && indexDist < 0.20 && middleDist < 0.20 && wristDist < 0.32) {
+  if (h1_up && h2_up && h1_not_folded && h2_not_folded && !h1_crossed && !h2_crossed && indexDist < 0.20 && middleDist < 0.20 && wristDist < 0.32) {
     return 1.0;
   }
   return 0.0;
@@ -156,6 +180,7 @@ function detectSukunaDomain(hands) {
 /**
  * ❤️ HEART JUTSU — Heart Sanctuary Mudra (2 Hands ONLY)
  * Thumbs touch at tips, index fingers touch at tips forming the arch, wrists slightly separated.
+ * Other fingers (ring/pinky) must be curved/folded.
  */
 function detectHeart(hands) {
   if (hands.length < 2) return 0.0;
@@ -166,9 +191,13 @@ function detectHeart(hands) {
   const indexDist = dist(lm1[INDEX_TIP], lm2[INDEX_TIP]);
   const thumbDist = dist(lm1[THUMB_TIP], lm2[THUMB_TIP]);
   const wristDist = dist(lm1[WRIST], lm2[WRIST]);
+
+  // At least one of the other fingers must be folded to distinguish it from the flat hands of Enmaten
+  const h1_folded = isFingerFolded(lm1, RING_TIP, RING_MCP) || isFingerFolded(lm1, PINKY_TIP, PINKY_MCP);
+  const h2_folded = isFingerFolded(lm2, RING_TIP, RING_MCP) || isFingerFolded(lm2, PINKY_TIP, PINKY_MCP);
   
   // Both index and thumbs must touch to form the premium heart loop, with wrists close but separated
-  if (indexDist < 0.16 && thumbDist < 0.16 && wristDist > 0.10 && wristDist < 0.35) {
+  if (h1_folded && h2_folded && indexDist < 0.16 && thumbDist < 0.16 && wristDist > 0.10 && wristDist < 0.35) {
     return 1.0;
   }
   
@@ -315,12 +344,13 @@ export const GESTURE_REGISTRY = [
     icon: '💀',
     color: '#ff1744',
     poseType: 'claw',
-    tip: '💡 Bring BOTH hands together (Enmaten Mudra). Palms face each other, index/middle fingers straight up (NOT crossed).',
+    tip: '💡 Bring BOTH hands together (Enmaten Mudra). Palms face each other, index/middle fingers straight up (NOT crossed), and ring/pinky fingers extended straight.',
     manualSteps: [
       'Raise BOTH hands toward the camera.',
       'Bring your hands close together, wrists nearly touching.',
-      'Incline your palms toward each other as if praying or holding a sphere.',
-      'Keep your index and middle fingers pointing straight up (make sure they are NOT crossed).',
+      'Incline your palms toward each other as if praying.',
+      'Keep index and middle fingers pointing straight up (not crossed).',
+      'Keep ring and pinky fingers extended straight (do NOT fold them).',
       'Hold the two-handed mudra steady to cast the domain!',
     ],
   },
@@ -381,11 +411,11 @@ export const GESTURE_REGISTRY = [
     icon: '🌀',
     color: '#4fc3f7',
     poseType: 'open-palm',
-    tip: '💡 Open your palm fully and spread all 5 fingers outward, facing the camera.',
+    tip: '💡 Open your palm fully and spread all 5 fingers wide. The palm MUST face directly towards the camera.',
     manualSteps: [
       'Raise your hand toward the camera.',
       'Open your palm fully and spread all 5 fingers wide.',
-      'Face your palm directly toward the camera.',
+      'Turn your hand so your PALM faces directly toward the camera (back of hand will not work).',
       'Hold steady — the Rasengan will form in your palm!',
     ],
   },
@@ -401,11 +431,11 @@ const HOLD_THRESHOLD = 0.5; // frames (smoothing factor)
  * Classify gesture from MediaPipe hand landmarks array (supports 1 or 2 hands).
  * Returns { id, label, charge } or null if nothing detected.
  */
-export function classifyGesture(multiHandLandmarks) {
+export function classifyGesture(multiHandLandmarks, handednessList = []) {
   if (!multiHandLandmarks || multiHandLandmarks.length === 0) return null;
 
   for (const g of GESTURE_REGISTRY) {
-    const score = g.detect(multiHandLandmarks);
+    const score = g.detect(multiHandLandmarks, handednessList);
     if (score > 0.5) {
       if (smoothState.current === g.id) {
         smoothState.confidence = Math.min(1, smoothState.confidence + 0.08);
